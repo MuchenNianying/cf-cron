@@ -255,7 +255,7 @@ npm run build
 ### 4. 环境变量配置
 
 #### 后端环境变量
-- 在 `server/wrangler.toml` 中配置 `SECRET_KEY`
+- `SECRET_KEY`：JWT签名密钥（通过Cloudflare控制台或Wrangler CLI设置为密钥类型）
 
 #### 前端环境变量
 - `SERVER_URL`：后端 API 服务地址（默认：`/api`）
