@@ -1,0 +1,11 @@
+name = "cf-cron-server"
+main = "index.ts"
+compatibility_date = "2025-12-08"
+
+d1_databases = [{ binding = "DB", database_name = "cf-cron-db", database_id = "682edf33-83d0-435a-97f2-31a9e25d19dd" }]
+
+[vars]
+JWT_SECRET = ""
+
+[triggers]
+crons = ["* * * * *"]

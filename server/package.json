@@ -1,0 +1,21 @@
+{
+  "name": "cf-cron",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate": "wrangler d1 execute cf-cron-db --file=./sql/init.sql"
+  },
+  "dependencies": {
+    "hono": "^4.10.4",
+    "cron-parser": "^4.9.0",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3"
+  },
+  "devDependencies": {
+    "wrangler": "^4.44.0",
+    "@cloudflare/workers-types": "^4.20251208.0"
+  }
+}

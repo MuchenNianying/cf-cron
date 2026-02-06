@@ -1,0 +1,87 @@
+-- 创建用户表
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name VARCHAR(32) NOT NULL UNIQUE,
+  password VARCHAR(64) NOT NULL,
+  salt VARCHAR(6) NOT NULL,
+  email VARCHAR(50) NOT NULL UNIQUE DEFAULT '',
+  is_admin TINYINT NOT NULL DEFAULT 0,
+  status TINYINT NOT NULL DEFAULT 1,
+  created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 创建任务表
+CREATE TABLE IF NOT EXISTS tasks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name VARCHAR(32) NOT NULL,
+  level TINYINT NOT NULL DEFAULT 1,
+  dependency_task_id VARCHAR(64) NOT NULL DEFAULT '',
+  dependency_status TINYINT NOT NULL DEFAULT 1,
+  spec VARCHAR(64) NOT NULL,
+  protocol TINYINT NOT NULL,
+  command VARCHAR(256) NOT NULL,
+  http_method TINYINT NOT NULL DEFAULT 1,
+  timeout INTEGER NOT NULL DEFAULT 0,
+  multi TINYINT NOT NULL DEFAULT 1,
+  retry_times TINYINT NOT NULL DEFAULT 0,
+  retry_interval SMALLINT NOT NULL DEFAULT 0,
+  notify_status TINYINT NOT NULL DEFAULT 1,
+  notify_type TINYINT NOT NULL DEFAULT 0,
+  notify_receiver_id VARCHAR(256) NOT NULL DEFAULT '',
+  notify_keyword VARCHAR(128) NOT NULL DEFAULT '',
+  tag VARCHAR(32) NOT NULL DEFAULT '',
+  remark VARCHAR(100) NOT NULL DEFAULT '',
+  status TINYINT NOT NULL DEFAULT 0,
+  created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  deleted DATETIME
+);
+
+-- 创建任务日志表
+CREATE TABLE IF NOT EXISTS task_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  task_id INTEGER NOT NULL,
+  name VARCHAR(32) NOT NULL,
+  spec VARCHAR(64) NOT NULL,
+  protocol TINYINT NOT NULL,
+  command VARCHAR(256) NOT NULL,
+  timeout INTEGER NOT NULL DEFAULT 0,
+  retry_times TINYINT NOT NULL DEFAULT 0,
+  hostname VARCHAR(128) NOT NULL DEFAULT '',
+  start_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  end_time DATETIME,
+  status TINYINT NOT NULL DEFAULT 1,
+  result TEXT NOT NULL
+);
+
+-- 创建系统设置表
+CREATE TABLE IF NOT EXISTS settings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  key VARCHAR(32) NOT NULL UNIQUE,
+  value TEXT NOT NULL,
+  created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 创建索引
+CREATE INDEX IF NOT EXISTS idx_tasks_level ON tasks(level);
+CREATE INDEX IF NOT EXISTS idx_tasks_protocol ON tasks(protocol);
+CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+CREATE INDEX IF NOT EXISTS idx_task_logs_task_id ON task_logs(task_id);
+CREATE INDEX IF NOT EXISTS idx_task_logs_protocol ON task_logs(protocol);
+CREATE INDEX IF NOT EXISTS idx_task_logs_status ON task_logs(status);
+CREATE INDEX IF NOT EXISTS idx_task_logs_start_time ON task_logs(start_time);
+
+-- 插入默认管理员用户
+INSERT OR IGNORE INTO users (name, password, salt, email, is_admin, status) VALUES (
+  'admin',
+  'ac0e7d037817094e9e0b4441f9bae3209d67b02fa484917065f71b16109a1a78',
+  '123456',
+  'admin@example.com',
+  1,
+  1
+);
+
+-- 插入默认设置
+INSERT OR IGNORE INTO settings (key, value) VALUES ('app_name', 'CF-Cron');
+INSERT OR IGNORE INTO settings (key, value) VALUES ('app_version', '1.0.0');
