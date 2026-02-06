@@ -176,20 +176,65 @@ cd client
 npm run build
 ```
 
-### 7. 部署前端
+## 部署到 Cloudflare
 
-你可以将 `client/dist` 目录部署到任何静态网站托管服务，例如：
-- Cloudflare Pages
-- Vercel
-- Netlify
-- GitHub Pages
+### 1. 后端部署（cf-cron-server）
 
-#### 前端环境变量配置
+1. **配置文件**：
+   - `server/wrangler.toml` 已配置为 `cf-cron-server`
 
-在部署前端时，你可以配置以下环境变量：
+2. **部署方式**：
+   - **手动部署**：
+     ```bash
+     cd server
+     npm run deploy
+     ```
+   - **自动部署**：通过 GitHub Actions 自动部署
 
-- `SERVER_URL`：后端API服务地址（默认：`/api`）
-  - 示例：`https://your-worker-name.workers.dev/api`
+### 2. 前端部署（cf-cron）
+
+1. **构建**：
+   ```bash
+   cd client
+   npm run build
+   ```
+
+2. **部署方式**：
+   - **手动部署**：将 `client/dist` 目录部署到 Cloudflare Pages
+   - **自动部署**：通过 GitHub Actions 自动部署
+
+### 3. GitHub Actions 自动部署
+
+项目已配置 GitHub Actions 自动部署：
+
+#### 配置文件
+- `/.github/workflows/deploy_server.yml`：自动部署后端到 Cloudflare Workers
+- `/.github/workflows/deploy_client.yml`：自动部署前端到 Cloudflare Pages
+
+#### 所需 GitHub Secrets
+
+在 GitHub 仓库的 Settings → Secrets and variables → Actions 中设置以下 Secrets：
+
+1. **通用配置**：
+   - `CLOUDFLARE_API_TOKEN`：Cloudflare API 令牌（需要 Workers 和 Pages 编辑权限）
+   - `CLOUDFLARE_ACCOUNT_ID`：Cloudflare 账户 ID
+
+2. **前端配置**：
+   - `SERVER_URL`：后端 API 服务地址（例如：`https://cf-cron-server.your-account.workers.dev/api`）
+
+#### 部署流程
+1. 推送代码到 `master` 分支
+2. GitHub Actions 自动触发部署
+3. 后端部署到 Cloudflare Workers（cf-cron-server）
+4. 前端构建并部署到 Cloudflare Pages（cf-cron）
+
+### 4. 环境变量配置
+
+#### 后端环境变量
+- 在 `server/wrangler.toml` 中配置 `JWT_SECRET`
+
+#### 前端环境变量
+- `SERVER_URL`：后端 API 服务地址（默认：`/api`）
 
 ## 数据库结构
 
