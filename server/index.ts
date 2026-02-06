@@ -20,9 +20,10 @@ const verifyToken = async (token: string, secret: string): Promise<any> => {
     // 验证签名
     const encoder = new TextEncoder();
     const data = encoder.encode(`${encodedHeader}.${encodedPayload}`);
+    const secretKey = secret && secret.length > 0 ? secret : 'default_secret';
     const key = await crypto.subtle.importKey(
       'raw',
-      encoder.encode(secret),
+      encoder.encode(secretKey),
       { name: 'HMAC', hash: { name: 'SHA-256' } },
       false,
       ['verify']
@@ -58,18 +59,51 @@ app.get('/health', (c) => {
   return c.json({ status: 'ok' });
 });
 
+// 测试端点
+app.post('/test', async (c) => {
+  try {
+    const body = await c.req.json();
+    return c.json({ message: '测试成功', data: body });
+  } catch (error) {
+    return c.json({ error: '测试失败' }, 500);
+  }
+});
+
+// 数据库测试端点
+app.get('/test-db', async (c) => {
+  try {
+    // 检查数据库连接
+    if (!c.env.DB) {
+      return c.json({ error: '数据库连接失败' }, 500);
+    }
+    
+    // 测试查询用户表
+    const users = await c.env.DB.prepare('SELECT COUNT(*) as count FROM users').first();
+    
+    // 测试查询任务表
+    const tasks = await c.env.DB.prepare('SELECT COUNT(*) as count FROM tasks').first();
+    
+    return c.json({
+      status: 'ok',
+      database: 'connected',
+      users: users,
+      tasks: tasks
+    });
+  } catch (error) {
+    return c.json({ error: '数据库测试失败' }, 500);
+  }
+});
+
 // 认证路由（不需要认证）
 app.route('/api/auth', authRoutes);
 
 // 任务调度器触发点（不需要认证，用于测试 Cron Trigger）
 app.get('/api/scheduler/run', async (c) => {
   try {
-    console.log('=== 手动触发调度器 ===');
     const scheduler = new Scheduler(c.env);
     await scheduler.run();
     return c.json({ message: '调度器执行成功' });
   } catch (error) {
-    console.error('调度器执行失败:', error);
     return c.json({ error: '调度器执行失败' }, 500);
   }
 });
@@ -77,17 +111,12 @@ app.get('/api/scheduler/run', async (c) => {
 // 测试定时任务触发点（模拟 Cloudflare Cron Trigger）
 app.get('/api/scheduler/test', async (c) => {
   try {
-    console.log('=== 测试定时任务触发 ===');
     // 直接调用 scheduled 函数的逻辑
-    const now = new Date();
-    console.log(`模拟定时任务触发时间: ${now.toISOString()}`);
-    
     const scheduler = new Scheduler(c.env);
     await scheduler.run();
     
     return c.json({ message: '定时任务触发测试成功' });
   } catch (error) {
-    console.error('定时任务触发测试失败:', error);
     return c.json({ error: '定时任务触发测试失败' }, 500);
   }
 });

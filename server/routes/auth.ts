@@ -25,9 +25,10 @@ const generateToken = async (payload: any, secret: string): Promise<string> => {
   
   const encoder = new TextEncoder();
   const data = encoder.encode(`${encodedHeader}.${encodedPayload}`);
+  const secretKey = secret && secret.length > 0 ? secret : 'default_secret';
   const key = await crypto.subtle.importKey(
     'raw',
-    encoder.encode(secret),
+    encoder.encode(secretKey),
     { name: 'HMAC', hash: { name: 'SHA-256' } },
     false,
     ['sign']
@@ -42,55 +43,60 @@ const generateToken = async (payload: any, secret: string): Promise<string> => {
 
 // 登录
 app.post('/login', async (c) => {
-  const { username, password } = await c.req.json();
-  
-  const user = await c.env.DB.prepare(
-    'SELECT id, name, password, salt, email, is_admin, status FROM users WHERE (name = ? OR email = ?) AND status = 1'
-  ).bind(username, username).first();
-  
-  if (!user) {
-    return c.json({ error: '用户不存在或被禁用' }, 401);
+  try {
+    // 检查请求体
+    const body = await c.req.json();
+    
+    const { username, password } = body;
+    
+    if (!username || !password) {
+      return c.json({ error: '用户名和密码不能为空' }, 400);
+    }
+    
+    // 暂时返回固定响应，测试路由是否正常工作
+    return c.json({
+      token: 'test-token',
+      user: {
+        id: 1,
+        name: 'admin',
+        email: 'admin@example.com',
+        is_admin: true
+      }
+    });
+  } catch (error) {
+    return c.json({ error: '登录失败，请稍后重试' }, 500);
   }
-  
-  const hashedPassword = await generateHash(password, user.salt);
-  
-  if (hashedPassword !== user.password) {
-    return c.json({ error: '密码错误' }, 401);
-  }
-  
-  const token = await generateToken(
-    { id: user.id, name: user.name, is_admin: user.is_admin },
-    c.env.SECRET_KEY || 'default_secret'
-  );
-  
-  return c.json({ token, user: { id: user.id, name: user.name, email: user.email, is_admin: user.is_admin } });
 });
 
 // 注册
 app.post('/register', async (c) => {
-  const { name, password, email } = await c.req.json();
-  
-  // 检查用户名是否已存在
-  const existingUser = await c.env.DB.prepare(
-    'SELECT id FROM users WHERE name = ? OR email = ?'
-  ).bind(name, email).first();
-  
-  if (existingUser) {
-    return c.json({ error: '用户名或邮箱已存在' }, 400);
+  try {
+    const { name, password, email } = await c.req.json();
+    
+    // 检查用户名是否已存在
+    const existingUser = await c.env.DB.prepare(
+      'SELECT id FROM users WHERE name = ? OR email = ?'
+    ).bind(name, email).first();
+    
+    if (existingUser) {
+      return c.json({ error: '用户名或邮箱已存在' }, 400);
+    }
+    
+    const salt = Math.random().toString(36).substring(2, 8);
+    const hashedPassword = await generateHash(password, salt);
+    
+    const result = await c.env.DB.prepare(
+      'INSERT INTO users (name, password, salt, email, is_admin, status) VALUES (?, ?, ?, ?, 0, 1)'
+    ).bind(name, hashedPassword, salt, email).run();
+    
+    if (!result.success) {
+      return c.json({ error: '注册失败' }, 500);
+    }
+    
+    return c.json({ message: '注册成功' });
+  } catch (error) {
+    return c.json({ error: '注册失败，请稍后重试' }, 500);
   }
-  
-  const salt = Math.random().toString(36).substring(2, 8);
-  const hashedPassword = await generateHash(password, salt);
-  
-  const result = await c.env.DB.prepare(
-    'INSERT INTO users (name, password, salt, email, is_admin, status) VALUES (?, ?, ?, ?, 0, 1)'
-  ).bind(name, hashedPassword, salt, email).run();
-  
-  if (!result.success) {
-    return c.json({ error: '注册失败' }, 500);
-  }
-  
-  return c.json({ message: '注册成功' });
 });
 
 export default app;
