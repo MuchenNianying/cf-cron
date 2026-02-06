@@ -3,7 +3,7 @@ import { DB } from '@cloudflare/workers-types';
 
 type Env = {
   DB: DB;
-  JWT_SECRET: string;
+  SECRET_KEY: string;
 };
 
 const app = new Hono<{ Bindings: Env }>();
@@ -60,7 +60,7 @@ app.post('/login', async (c) => {
   
   const token = await generateToken(
     { id: user.id, name: user.name, is_admin: user.is_admin },
-    c.env.JWT_SECRET || 'default_secret'
+    c.env.SECRET_KEY || 'default_secret'
   );
   
   return c.json({ token, user: { id: user.id, name: user.name, email: user.email, is_admin: user.is_admin } });

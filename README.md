@@ -255,7 +255,7 @@ npm run build
 ### 4. 环境变量配置
 
 #### 后端环境变量
-- 在 `server/wrangler.toml` 中配置 `JWT_SECRET`
+- 在 `server/wrangler.toml` 中配置 `SECRET_KEY`
 
 #### 前端环境变量
 - `SERVER_URL`：后端 API 服务地址（默认：`/api`）

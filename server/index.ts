@@ -10,7 +10,7 @@ const app = new Hono();
 
 // 验证 JWT
 type EnvWithJWT = {
-  JWT_SECRET: string;
+  SECRET_KEY: string;
 };
 
 const verifyToken = async (token: string, secret: string): Promise<any> => {
@@ -101,8 +101,8 @@ protectedRoutes.use('*', async (c, next) => {
   }
   
   try {
-    const secret = c.env.JWT_SECRET || 'default_secret';
-    const payload = await verifyToken(token, secret);
+      const secret = c.env.SECRET_KEY || 'default_secret';
+      const payload = await verifyToken(token, secret);
     
     // 将用户信息存储到上下文中
     c.set('user', payload);
@@ -121,8 +121,8 @@ adminRoutes.use('*', async (c, next) => {
   }
   
   try {
-    const secret = c.env.JWT_SECRET || 'default_secret';
-    const payload = await verifyToken(token, secret);
+      const secret = c.env.SECRET_KEY || 'default_secret';
+      const payload = await verifyToken(token, secret);
     
     // 检查是否为管理员
     if (!payload.is_admin) {
