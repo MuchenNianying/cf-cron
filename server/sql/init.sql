@@ -37,6 +37,10 @@ CREATE TABLE IF NOT EXISTS tasks (
   deleted DATETIME
 );
 
+-- 添加请求头和请求体字段到 tasks 表
+ALTER TABLE tasks ADD COLUMN request_headers TEXT NOT NULL DEFAULT '';
+ALTER TABLE tasks ADD COLUMN request_body TEXT NOT NULL DEFAULT '';
+
 -- 创建任务日志表
 CREATE TABLE IF NOT EXISTS task_logs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,6 +67,16 @@ CREATE TABLE IF NOT EXISTS settings (
   updated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 创建邮件用户表
+CREATE TABLE IF NOT EXISTS mail_users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username VARCHAR(32) NOT NULL,
+  email VARCHAR(100) NOT NULL,
+  status TINYINT NOT NULL DEFAULT 1,
+  created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- 创建索引
 CREATE INDEX IF NOT EXISTS idx_tasks_level ON tasks(level);
 CREATE INDEX IF NOT EXISTS idx_tasks_protocol ON tasks(protocol);
@@ -71,6 +85,7 @@ CREATE INDEX IF NOT EXISTS idx_task_logs_task_id ON task_logs(task_id);
 CREATE INDEX IF NOT EXISTS idx_task_logs_protocol ON task_logs(protocol);
 CREATE INDEX IF NOT EXISTS idx_task_logs_status ON task_logs(status);
 CREATE INDEX IF NOT EXISTS idx_task_logs_start_time ON task_logs(start_time);
+CREATE INDEX IF NOT EXISTS idx_mail_users_status ON mail_users(status);
 
 -- 插入默认管理员用户
 INSERT OR IGNORE INTO users (name, password, salt, email, is_admin, status) VALUES (
