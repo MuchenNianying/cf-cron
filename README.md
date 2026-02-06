@@ -222,6 +222,30 @@ npm run build
 2. **前端配置**：
    - `SERVER_URL`：后端 API 服务地址（例如：`https://cf-cron-server.your-account.workers.dev/api`）
 
+#### Cloudflare API Token 权限设置
+
+创建 Cloudflare API Token 时，需要设置以下权限：
+
+1. **权限范围**：
+   - **Account** → **Workers Scripts** → **Edit**：用于部署 Workers
+   - **Account** → **Pages** → **Edit**：用于部署 Pages
+   - **Account** → **D1** → **Edit**：用于管理 D1 数据库
+
+2. **创建步骤**：
+   - 登录 Cloudflare 控制台
+   - 访问：https://dash.cloudflare.com/profile/api-tokens
+   - 点击 "Create Token"
+   - 选择 "Create Custom Token"
+   - 名称：`cf-cron-deployment`
+   - 权限设置：
+     - 选择 "Account" → "Workers Scripts" → "Edit"
+     - 选择 "Account" → "Pages" → "Edit"
+     - 选择 "Account" → "D1" → "Edit"
+   - 账户资源：选择你的 Cloudflare 账户
+   - 点击 "Continue to summary"
+   - 点击 "Create Token"
+   - 复制生成的 API Token 并保存到 GitHub Secrets
+
 #### 部署流程
 1. 推送代码到 `master` 分支
 2. GitHub Actions 自动触发部署
