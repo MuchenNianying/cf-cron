@@ -32,71 +32,96 @@ export class Scheduler {
     
     // 获取所有启用的任务
     console.log('开始查询启用的任务...');
-    const tasks = await this.db.prepare(
-      'SELECT id, name, spec, protocol, command, http_method, timeout, retry_times, retry_interval, request_headers, request_body FROM tasks WHERE status = 1'
-    ).all();
-    
-    console.log(`查询完成，找到 ${tasks.results?.length || 0} 个启用的任务`);
-    
-    if (!tasks.results || tasks.results.length === 0) {
-      console.log('没有找到启用的任务，调度器结束');
-      return;
-    }
-    
-    for (const task of tasks.results as Task[]) {
-      try {
-        console.log(`\n处理任务: ${task.id} - ${task.name}`);
-        console.log(`任务配置: cron=${task.spec}, protocol=${task.protocol}, command=${task.command}`);
-        
-        // 解析 cron 表达式，设置时区为 UTC
-        const interval = cronParser.parseExpression(task.spec, { utc: true });
-        
-        // 检查任务是否应该在当前时间执行
-        // 方法：检查当前时间是否是任务的下一个执行时间点
-        // 获取上一个执行时间
-        const prevRun = interval.prev().toDate();
-        
-        // 计算上一个执行时间的分钟数
-        const prevRunMinute = prevRun.getMinutes();
-        const currentMinute = now.getMinutes();
-        
-        // 对于分钟级别的任务，检查是否在当前分钟内
-        // 对于其他级别的任务，检查是否到达了执行时间点
-        
-        // 获取任务的 cron 表达式的各个部分
-        const cronParts = task.spec.split(' ');
-        const minutePart = cronParts[0];
-        
-        console.log(`Cron 表达式分析: minute=${minutePart}`);
-        console.log(`时间检查: 上次执行分钟 ${prevRunMinute}, 当前分钟 ${currentMinute}`);
-        
-        // 检查是否需要执行任务
-        if (this.shouldExecuteTask(task.spec, now)) {
-          // 检查是否已经执行过（避免重复执行）
-          console.log('检查是否已经执行过...');
-          
-          // 对于分钟级任务，检查过去2分钟内是否执行过
-          // 对于其他任务，检查过去1小时内是否执行过
-          const checkTime = new Date(now.getTime() - (minutePart === '*' ? 2 : 60) * 60 * 1000);
-          
-          const lastLog = await this.db.prepare(
-            'SELECT * FROM task_logs WHERE task_id = ? AND start_time >= ? ORDER BY id DESC LIMIT 1'
-          ).bind(task.id, checkTime.toISOString()).first();
-          
-          if (!lastLog) {
-            console.log('任务未执行过，开始执行...');
-            // 执行任务
-            await this.executeTask(task);
-            console.log('任务执行完成');
-          } else {
-            console.log('任务已经执行过，跳过');
-          }
-        } else {
-          console.log('任务不在执行时间窗口内，跳过');
-        }
-      } catch (error) {
-        console.error(`处理任务 ${task.id} 时出错:`, error);
+    try {
+      const tasks = await this.db.prepare(
+        'SELECT id, name, spec, protocol, command, http_method, timeout, retry_times, retry_interval, request_headers, request_body FROM tasks WHERE status = 1'
+      ).all();
+      
+      console.log(`查询完成，找到 ${tasks.results?.length || 0} 个启用的任务`);
+      
+      if (!tasks.results || tasks.results.length === 0) {
+        console.log('没有找到启用的任务，调度器结束');
+        return;
       }
+      
+      console.log('任务列表:', tasks.results.map((t: any) => ({ id: t.id, name: t.name, spec: t.spec })));
+      
+      for (const task of tasks.results as Task[]) {
+        try {
+          console.log(`\n处理任务: ${task.id} - ${task.name}`);
+          console.log(`任务配置: cron=${task.spec}, protocol=${task.protocol}, command=${task.command}`);
+          
+          // 验证任务配置
+          if (!task.spec) {
+            console.log('任务没有设置 cron 表达式，跳过');
+            continue;
+          }
+          
+          // 解析 cron 表达式，设置时区为 UTC
+          console.log('开始解析 cron 表达式:', task.spec);
+          const interval = cronParser.parseExpression(task.spec, { utc: true });
+          console.log('Cron 表达式解析成功');
+          
+          // 获取下一个执行时间
+          const nextRun = interval.next().toDate();
+          console.log('下一个执行时间:', nextRun.toISOString());
+          
+          // 重置解析器，获取上一个执行时间
+          const resetInterval = cronParser.parseExpression(task.spec, { utc: true });
+          const prevRun = resetInterval.prev().toDate();
+          console.log('上一个执行时间:', prevRun.toISOString());
+          
+          // 计算上一个执行时间的分钟数
+          const prevRunMinute = prevRun.getMinutes();
+          const currentMinute = now.getMinutes();
+          
+          // 获取任务的 cron 表达式的各个部分
+          const cronParts = task.spec.split(' ');
+          const minutePart = cronParts[0];
+          
+          console.log(`Cron 表达式分析: minute=${minutePart}`);
+          console.log(`时间检查: 上次执行分钟 ${prevRunMinute}, 当前分钟 ${currentMinute}`);
+          console.log(`当前时间: ${now.toISOString()}`);
+          
+          // 检查是否需要执行任务
+          console.log('开始检查任务是否应该执行...');
+          const shouldExecute = this.shouldExecuteTask(task.spec, now);
+          console.log(`任务是否应该执行: ${shouldExecute}`);
+          
+          if (shouldExecute) {
+            // 检查是否已经执行过（避免重复执行）
+            console.log('检查是否已经执行过...');
+            
+            // 对于分钟级任务，检查过去2分钟内是否执行过
+            // 对于其他任务，检查过去1小时内是否执行过
+            const checkTime = new Date(now.getTime() - (minutePart === '*' ? 2 : 60) * 60 * 1000);
+            console.log(`检查时间范围: ${checkTime.toISOString()} 到 ${now.toISOString()}`);
+            
+            const lastLog = await this.db.prepare(
+              'SELECT * FROM task_logs WHERE task_id = ? AND start_time >= ? ORDER BY id DESC LIMIT 1'
+            ).bind(task.id, checkTime.toISOString()).first();
+            
+            console.log(`最后一次执行记录:`, lastLog);
+            
+            if (!lastLog) {
+              console.log('任务未执行过，开始执行...');
+              // 执行任务
+              await this.executeTask(task);
+              console.log('任务执行完成');
+            } else {
+              console.log('任务已经执行过，跳过');
+            }
+          } else {
+            console.log('任务不在执行时间窗口内，跳过');
+          }
+        } catch (error) {
+          console.error(`处理任务 ${task.id} 时出错:`, error);
+          console.error(`错误堆栈:`, error.stack);
+        }
+      }
+    } catch (error) {
+      console.error('查询任务时出错:', error);
+      console.error(`错误堆栈:`, error.stack);
     }
     
     console.log(`\n=== 调度器运行结束 ===`);
@@ -110,22 +135,40 @@ export class Scheduler {
    */
   private shouldExecuteTask(cronExpression: string, currentTime: Date): boolean {
     try {
+      console.log(`\n开始判断任务是否应该执行:`);
+      console.log(`Cron 表达式: ${cronExpression}`);
+      console.log(`当前时间: ${currentTime.toISOString()}`);
+      
       // 解析 cron 表达式，设置时区为 UTC
       const interval = cronParser.parseExpression(cronExpression, { utc: true });
       const nextRun = interval.next().toDate();
-      const prevRun = interval.prev().toDate();
+      
+      // 重置解析器，获取上一个执行时间
+      const resetInterval = cronParser.parseExpression(cronExpression, { utc: true });
+      const prevRun = resetInterval.prev().toDate();
+      
+      console.log(`下一个执行时间: ${nextRun.toISOString()}`);
+      console.log(`上一个执行时间: ${prevRun.toISOString()}`);
       
       // 对于分钟级任务 (* * * * *)，检查当前时间是否在上一分钟内
       if (cronExpression === '* * * * *') {
+        console.log('任务是分钟级任务 (* * * * *)');
         // 检查是否在上一分钟内
         const oneMinuteAgo = new Date(currentTime.getTime() - 60 * 1000);
-        return prevRun >= oneMinuteAgo && prevRun <= currentTime;
+        console.log(`一分钟前: ${oneMinuteAgo.toISOString()}`);
+        const isInRange = prevRun >= oneMinuteAgo && prevRun <= currentTime;
+        console.log(`上一个执行时间是否在范围内: ${isInRange}`);
+        return isInRange;
       }
       
       // 对于其他任务，检查当前时间是否接近上一个执行时间
       // 允许有1分钟的误差
+      console.log('任务是其他级别的任务');
       const timeDiff = Math.abs(currentTime.getTime() - prevRun.getTime());
-      return timeDiff <= 60 * 1000; // 1分钟内
+      console.log(`时间差: ${timeDiff} 毫秒`);
+      const isCloseEnough = timeDiff <= 60 * 1000; // 1分钟内
+      console.log(`时间差是否在允许范围内: ${isCloseEnough}`);
+      return isCloseEnough;
     } catch (error) {
       console.error(`解析 cron 表达式失败: ${cronExpression}`, error);
       return false;
