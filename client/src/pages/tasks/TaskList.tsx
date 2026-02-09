@@ -54,13 +54,20 @@ const TaskList = () => {
         try {
           // 只有当task.spec不为空且有效时才计算下次执行时间
           if (task.spec && typeof task.spec === 'string' && task.spec.trim() !== '') {
+            console.log('计算下次执行时间:', task.spec);
             // 使用cron-parser计算下次执行时间
-            const interval = cronParser.parseExpression(task.spec);
+            // 使用类型断言避免TypeScript错误
+            const parseExp = (cronParser as any).parseExpression || (cronParser as any);
+            const interval = parseExp(task.spec);
             next_run_at = interval.next().toISOString();
+            console.log('下次执行时间:', next_run_at);
+          } else {
+            console.log('task.spec为空或无效:', task.spec);
           }
         } catch (error) {
           console.error('解析cron表达式失败:', error);
         }
+        console.log('最终下次执行时间:', next_run_at);
         
         return {
           id: task.id,
