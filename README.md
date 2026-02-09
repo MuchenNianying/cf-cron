@@ -258,56 +258,81 @@ npm run build
 - `SECRET_KEY`：JWT签名密钥（通过Cloudflare控制台或Wrangler CLI设置为密钥类型）
 
 #### 前端环境变量
-- `SERVER_URL`：后端 API 服务地址（默认：`/api`）
+- `VITE_SERVER_URL`：后端 API 服务地址（默认：`/api`）
+
+> 注意：由于使用了 Vite 构建工具，前端环境变量必须以 `VITE_` 前缀开头才能在客户端代码中访问。
 
 ## 数据库结构
 
 系统使用以下数据表：
 
 ### `users` 表 - 用户信息
-- `id` (INTEGER PRIMARY KEY): 用户 ID
-- `username` (TEXT UNIQUE): 用户名
-- `password` (TEXT): 密码哈希
-- `is_admin` (INTEGER): 是否为管理员 (1=是, 0=否)
-- `created_at` (TIMESTAMP): 创建时间
+- `id` (INTEGER PRIMARY KEY AUTOINCREMENT): 用户 ID
+- `name` (VARCHAR(32) UNIQUE): 用户名
+- `password` (VARCHAR(64)): 密码哈希
+- `salt` (VARCHAR(6)): 密码盐值
+- `email` (VARCHAR(50) UNIQUE): 邮箱
+- `is_admin` (TINYINT): 是否为管理员 (1=是, 0=否)
+- `status` (TINYINT): 状态 (1=启用, 0=禁用)
+- `created` (DATETIME): 创建时间
+- `updated` (DATETIME): 更新时间
 
 ### `tasks` 表 - 任务信息
-- `id` (INTEGER PRIMARY KEY): 任务 ID
-- `name` (TEXT): 任务名称
-- `level` (INTEGER): 任务级别
-- `dependency_task_id` (TEXT): 依赖任务 ID
-- `dependency_status` (INTEGER): 依赖状态
-- `spec` (TEXT): Cron 表达式（6位格式：秒 分 时 日 月 星期）
-- `protocol` (INTEGER): 执行协议 (1=HTTP, 其他值保留)
-- `command` (TEXT): 请求 URL（当 protocol=1 时）
-- `http_method` (INTEGER): HTTP 请求方法 (1=GET, 2=POST)
+- `id` (INTEGER PRIMARY KEY AUTOINCREMENT): 任务 ID
+- `name` (VARCHAR(32)): 任务名称
+- `level` (TINYINT): 任务级别
+- `dependency_task_id` (VARCHAR(64)): 依赖任务 ID
+- `dependency_status` (TINYINT): 依赖状态
+- `spec` (VARCHAR(64)): Cron 表达式（6位格式：秒 分 时 日 月 星期）
+- `protocol` (TINYINT): 执行协议 (1=HTTP, 其他值保留)
+- `command` (VARCHAR(256)): 请求 URL（当 protocol=1 时）
+- `http_method` (TINYINT): HTTP 请求方法 (1=GET, 2=POST)
 - `timeout` (INTEGER): 超时时间（秒）
-- `multi` (INTEGER): 是否允许多实例执行
-- `retry_times` (INTEGER): 重试次数
-- `retry_interval` (INTEGER): 重试间隔（秒）
-- `notify_status` (INTEGER): 通知状态
-- `notify_type` (INTEGER): 通知类型
-- `notify_receiver_id` (TEXT): 通知接收者 ID
-- `notify_keyword` (TEXT): 通知关键词
-- `tag` (TEXT): 任务标签
-- `remark` (TEXT): 任务备注
-- `status` (INTEGER): 是否启用 (1=启用, 0=禁用)
-- `request_headers` (TEXT): HTTP 请求头 (JSON 格式)
-- `request_body` (TEXT): HTTP 请求体
+- `multi` (TINYINT): 是否允许多实例执行
+- `retry_times` (TINYINT): 重试次数
+- `retry_interval` (SMALLINT): 重试间隔（秒）
+- `notify_status` (TINYINT): 通知状态
+- `notify_type` (TINYINT): 通知类型
+- `notify_receiver_id` (VARCHAR(256)): 通知接收者 ID
+- `notify_keyword` (VARCHAR(128)): 通知关键词
+- `tag` (VARCHAR(32)): 任务标签
+- `remark` (VARCHAR(100)): 任务备注
+- `status` (TINYINT): 是否启用 (1=启用, 0=禁用)
+- `request_headers` (TEXT): HTTP 请求头 (JSON 格式，默认：'')
+- `request_body` (TEXT): HTTP 请求体 (默认：'')
+- `created` (DATETIME): 创建时间
+- `deleted` (DATETIME): 删除时间
 
 ### `task_logs` 表 - 任务执行日志
-- `id` (INTEGER PRIMARY KEY): 日志 ID
+- `id` (INTEGER PRIMARY KEY AUTOINCREMENT): 日志 ID
 - `task_id` (INTEGER): 任务 ID
-- `name` (TEXT): 任务名称
-- `spec` (TEXT): Cron 表达式
-- `protocol` (INTEGER): 执行协议
-- `command` (TEXT): 执行命令/URL
-- `timeout` (INTEGER): 超时时间
-- `retry_times` (INTEGER): 重试次数
-- `start_time` (TIMESTAMP): 开始时间
-- `end_time` (TIMESTAMP): 结束时间
-- `status` (INTEGER): 执行状态 (2=成功, 0=失败)
+- `name` (VARCHAR(32)): 任务名称
+- `spec` (VARCHAR(64)): Cron 表达式
+- `protocol` (TINYINT): 执行协议
+- `command` (VARCHAR(256)): 请求 URL
+- `timeout` (INTEGER): 超时时间（秒）
+- `retry_times` (TINYINT): 重试次数
+- `hostname` (VARCHAR(128)): 执行主机名
+- `start_time` (DATETIME): 开始执行时间
+- `end_time` (DATETIME): 结束执行时间
+- `status` (TINYINT): 执行状态
 - `result` (TEXT): 执行结果
+
+### `settings` 表 - 系统设置
+- `id` (INTEGER PRIMARY KEY AUTOINCREMENT): 设置 ID
+- `key` (VARCHAR(32) UNIQUE): 设置键
+- `value` (TEXT): 设置值
+- `created` (DATETIME): 创建时间
+- `updated` (DATETIME): 更新时间
+
+### `mail_users` 表 - 邮件用户
+- `id` (INTEGER PRIMARY KEY AUTOINCREMENT): 用户 ID
+- `username` (VARCHAR(32)): 用户名
+- `email` (VARCHAR(100)): 邮箱
+- `status` (TINYINT): 状态 (1=启用, 0=禁用)
+- `created` (DATETIME): 创建时间
+- `updated` (DATETIME): 更新时间
+
 
 ## 初始账户
 
