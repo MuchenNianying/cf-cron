@@ -8,14 +8,16 @@ import Modal from 'antd/es/modal/Modal';
 interface TaskLog {
   id: number;
   task_id: number;
-  task_name: string;
+  name: string;
   status: number;
-  output: string;
-  duration: number;
+  result: string;
   retry_times: number;
   spec: string;
   command: string;
-  created_at: string;
+  start_time: string;
+  end_time: string;
+  protocol: number;
+  hostname: string;
 }
 
 const LogList = () => {
@@ -71,8 +73,8 @@ const LogList = () => {
     },
     {
       title: '任务名称',
-      dataIndex: 'task_name',
-      key: 'task_name',
+      dataIndex: 'name',
+      key: 'name',
       width: 180,
     },
     {
@@ -80,31 +82,59 @@ const LogList = () => {
       dataIndex: 'status',
       key: 'status',
       width: 100,
-      render: (status: number) => (
-        <span style={{ 
-          padding: '2px 8px', 
-          borderRadius: '4px', 
-          fontSize: '12px',
-          backgroundColor: status === 1 ? '#f6ffed' : '#fff2f0',
-          color: status === 1 ? '#52c41a' : '#ff4d4f'
-        }}>
-          {status === 1 ? '成功' : '失败'}
-        </span>
-      ),
-    },
-    {
-      title: '执行时间',
-      dataIndex: 'duration',
-      key: 'duration',
-      width: 100,
-      render: (duration: number) => `${duration}ms`,
+      render: (status: number) => {
+        let statusText = '';
+        let bgColor = '';
+        let textColor = '';
+        
+        switch (status) {
+          case 0:
+            statusText = '失败';
+            bgColor = '#fff2f0';
+            textColor = '#ff4d4f';
+            break;
+          case 1:
+            statusText = '执行中';
+            bgColor = '#e6f7ff';
+            textColor = '#1890ff';
+            break;
+          case 2:
+            statusText = '成功';
+            bgColor = '#f6ffed';
+            textColor = '#52c41a';
+            break;
+          default:
+            statusText = '未知';
+            bgColor = '#f5f5f5';
+            textColor = '#333';
+        }
+        
+        return (
+          <span style={{ 
+            padding: '2px 8px', 
+            borderRadius: '4px', 
+            fontSize: '12px',
+            backgroundColor: bgColor,
+            color: textColor
+          }}>
+            {statusText}
+          </span>
+        );
+      },
     },
     {
       title: '开始时间',
-      dataIndex: 'created_at',
-      key: 'created_at',
+      dataIndex: 'start_time',
+      key: 'start_time',
       width: 180,
-      render: (created_at: string) => new Date(created_at).toLocaleString('zh-CN'),
+      render: (start_time: string) => new Date(start_time).toLocaleString('zh-CN'),
+    },
+    {
+      title: '结束时间',
+      dataIndex: 'end_time',
+      key: 'end_time',
+      width: 180,
+      render: (end_time: string) => end_time ? new Date(end_time).toLocaleString('zh-CN') : '未结束',
     },
     {
       title: '操作',
@@ -190,6 +220,12 @@ const LogList = () => {
               <div style={{ marginBottom: '8px' }}>
                 <strong>命令:</strong> {record.command}
               </div>
+              <div style={{ marginBottom: '8px' }}>
+                <strong>协议:</strong> {record.protocol === 1 ? 'HTTP' : '其他'}
+              </div>
+              <div style={{ marginBottom: '8px' }}>
+                <strong>主机名:</strong> {record.hostname}
+              </div>
             </div>
           ),
         }}
@@ -208,13 +244,13 @@ const LogList = () => {
       >
         <div>
           <div style={{ marginBottom: '16px' }}>
-            <strong>任务名称:</strong> {selectedLog?.task_name}
+            <strong>任务名称:</strong> {selectedLog?.name}
           </div>
           <div style={{ marginBottom: '16px' }}>
-            <strong>执行时间:</strong> {selectedLog?.duration}ms
+            <strong>开始时间:</strong> {selectedLog?.start_time ? new Date(selectedLog.start_time).toLocaleString('zh-CN') : ''}
           </div>
           <div style={{ marginBottom: '16px' }}>
-            <strong>开始时间:</strong> {selectedLog?.created_at ? new Date(selectedLog.created_at).toLocaleString('zh-CN') : ''}
+            <strong>结束时间:</strong> {selectedLog?.end_time ? new Date(selectedLog.end_time).toLocaleString('zh-CN') : '未结束'}
           </div>
           <div>
             <strong>执行结果:</strong>
@@ -226,7 +262,7 @@ const LogList = () => {
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-all'
             }}>
-              {selectedLog?.output}
+              {selectedLog?.result}
             </pre>
           </div>
         </div>

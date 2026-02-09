@@ -164,7 +164,7 @@ export class Scheduler {
     console.log(`创建任务日志: task_id=${task.id}, name=${task.name}`);
     const result = await this.db.prepare(
       'INSERT INTO task_logs (task_id, name, spec, protocol, command, timeout, retry_times, hostname, status, result) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).bind(task.id, task.name, task.spec, task.protocol, task.command, task.timeout, task.retry_times, 'localhost', 1, '执行中...').run();
+    ).bind(task.id, task.name, task.spec, task.protocol, task.command, task.timeout || 0, task.retry_times || 0, 'localhost', 1, '执行中...').run();
     
     const logId = result.meta?.last_row_id || result.lastInsertRowid;
     console.log(`任务日志创建成功: logId=${logId}, result=`, result);
@@ -179,8 +179,8 @@ export class Scheduler {
   private async updateTaskLog(id: number, status: number, result: string) {
     console.log(`更新任务日志: id=${id}, status=${status}, result=${result}`);
     await this.db.prepare(
-      'UPDATE task_logs SET status = ?, result = ?, end_time = CURRENT_TIMESTAMP WHERE id = ?'
-    ).bind(status, result, id).run();
+      'UPDATE task_logs SET status = ?, result = ?, end_time = ? WHERE id = ?'
+    ).bind(status, result, new Date().toISOString(), id).run();
   }
 
   private async executeHTTPTask(task: Task): Promise<string> {
