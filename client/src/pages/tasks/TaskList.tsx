@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
 import { apiRequest } from '../../config/api';
 // 导入cron-parser
-import * as cronParser from 'cron-parser';
+import cronParser from 'cron-parser';
 
 interface Task {
   id: number;
@@ -20,7 +20,7 @@ interface Task {
   status: number;
   created_at: string;
   updated_at: string;
-  next_run_at?: string;
+  next_run_at: string;
 }
 
 const TaskList = () => {
@@ -53,23 +53,25 @@ const TaskList = () => {
       // 转换后端返回的字段为前端Task接口定义的字段
       const tasksData = (data.tasks || []).map((task: any) => {
         console.log('处理任务:', task);
-        let next_run_at = null;
-        try {
-          // 只有当task.spec不为空且有效时才计算下次执行时间
-          if (task.spec && typeof task.spec === 'string' && task.spec.trim() !== '') {
-            console.log('计算下次执行时间:', task.spec);
+        let next_run_at = 'N/A';
+        
+        // 只有当task.spec不为空且有效时才计算下次执行时间
+        if (task.spec && typeof task.spec === 'string' && task.spec.trim() !== '') {
+          console.log('计算下次执行时间:', task.spec);
+          try {
             // 使用cron-parser计算下次执行时间
-            // 使用类型断言避免TypeScript错误
-            const parseExp = (cronParser as any).parseExpression || (cronParser as any);
-            const interval = parseExp(task.spec);
+            const interval = cronParser.parseExpression(task.spec);
             next_run_at = interval.next().toISOString();
             console.log('下次执行时间:', next_run_at);
-          } else {
-            console.log('task.spec为空或无效:', task.spec);
+          } catch (error) {
+            console.error('解析cron表达式失败:', error);
+            next_run_at = '无效表达式';
           }
-        } catch (error) {
-          console.error('解析cron表达式失败:', error);
+        } else {
+          console.log('task.spec为空或无效:', task.spec);
+          next_run_at = 'N/A';
         }
+        
         console.log('最终下次执行时间:', next_run_at);
         
         return {
@@ -183,7 +185,16 @@ const TaskList = () => {
       dataIndex: 'next_run_at',
       key: 'next_run_at',
       width: 180,
-      render: (next_run_at: string) => next_run_at ? new Date(next_run_at).toLocaleString('zh-CN') : 'N/A',
+      render: (next_run_at: string) => {
+        if (next_run_at === 'N/A' || next_run_at === '无效表达式') {
+          return next_run_at;
+        }
+        try {
+          return new Date(next_run_at).toLocaleString('zh-CN');
+        } catch (error) {
+          return '无效时间';
+        }
+      },
     },
     {
       title: '请求URL',
