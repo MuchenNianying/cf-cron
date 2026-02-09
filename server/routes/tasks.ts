@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { DB } from '@cloudflare/workers-types';
+import cronParser from 'cron-parser';
 
 type Env = {
   DB: DB;
@@ -49,6 +50,21 @@ app.get('/', async (c) => {
   
   const tasks = await c.env.DB.prepare(query).bind(...params).all();
   
+  // 计算每个任务的下次执行时间
+  const enrichedTasks = (tasks.results || []).map((task: any) => {
+    if (task.spec) {
+      try {
+        const interval = cronParser.parseExpression(task.spec, { utc: true });
+        task.next_run_at = interval.next().toDate().toISOString();
+      } catch (e) {
+        task.next_run_at = '无效表达式';
+      }
+    } else {
+      task.next_run_at = 'N/A';
+    }
+    return task;
+  });
+  
   let totalQuery = 'SELECT COUNT(*) as count FROM tasks WHERE 1=1';
   const totalParams: any[] = [];
   
@@ -73,7 +89,7 @@ app.get('/', async (c) => {
   }
   
   const total = await c.env.DB.prepare(totalQuery).bind(...totalParams).first();  
-  return c.json({ tasks: tasks.results, total: total?.count || 0 });
+  return c.json({ tasks: enrichedTasks, total: total?.count || 0 });
 });
 
 // 获取任务详情（所有认证用户都可以访问）
@@ -82,6 +98,18 @@ app.get('/:id', async (c) => {
   const task = await c.env.DB.prepare('SELECT * FROM tasks WHERE id = ?').bind(id).first();  
   if (!task) {
     return c.json({ error: '任务不存在' }, 404);
+  }
+  
+  // 计算下次执行时间
+  if (task.spec) {
+    try {
+      const interval = cronParser.parseExpression(task.spec, { utc: true });
+      task.next_run_at = interval.next().toDate().toISOString();
+    } catch (e) {
+      task.next_run_at = '无效表达式';
+    }
+  } else {
+    task.next_run_at = 'N/A';
   }
   
   return c.json({ task });

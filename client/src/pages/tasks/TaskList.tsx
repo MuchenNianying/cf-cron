@@ -53,31 +53,9 @@ const TaskList = () => {
       // 转换后端返回的字段为前端Task接口定义的字段
       const tasksData = (data.tasks || []).map((task: any) => {
         console.log('处理任务:', task);
-        let next_run_at = 'N/A';
-        
-        // 只有当task.spec不为空且有效时才计算下次执行时间
-        if (task.spec && typeof task.spec === 'string' && task.spec.trim() !== '') {
-          console.log('计算下次执行时间:', task.spec);
-          try {
-            // 使用cron-parser计算下次执行时间
-            // 支持6个字段的cron表达式（秒 分 时 日 月 周）
-            // 使用类型断言避免TypeScript错误
-            const parseExp = (cronParser as any).parseExpression || (cronParser as any);
-            const interval = parseExp(task.spec, {
-              type: 'seconds'
-            });
-            next_run_at = interval.next().toISOString();
-            console.log('下次执行时间:', next_run_at);
-          } catch (error) {
-            console.error('解析cron表达式失败:', error);
-            next_run_at = '无效表达式';
-          }
-        } else {
-          console.log('task.spec为空或无效:', task.spec);
-          next_run_at = 'N/A';
-        }
-        
-        console.log('最终下次执行时间:', next_run_at);
+        // 直接使用后端返回的下次执行时间
+        let next_run_at = task.next_run_at || 'N/A';
+        console.log('下次执行时间:', next_run_at);
         
         return {
           id: task.id,
