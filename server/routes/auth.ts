@@ -53,14 +53,35 @@ app.post('/login', async (c) => {
       return c.json({ error: '用户名和密码不能为空' }, 400);
     }
     
-    // 暂时返回固定响应，测试路由是否正常工作
+    // 从数据库中查询用户
+    const user = await c.env.DB.prepare(
+      'SELECT id, name, password, salt, email, is_admin FROM users WHERE name = ? OR email = ?'
+    ).bind(username, username).first();
+    
+    if (!user) {
+      return c.json({ error: '用户名或密码错误' }, 401);
+    }
+    
+    // 验证密码
+    const hashedPassword = await generateHash(password, user.salt);
+    if (hashedPassword !== user.password) {
+      return c.json({ error: '用户名或密码错误' }, 401);
+    }
+    
+    // 生成 JWT token
+    const token = await generateToken(
+      { id: user.id, name: user.name, email: user.email, is_admin: user.is_admin },
+      c.env.SECRET_KEY
+    );
+    
+    // 返回 token 和用户信息
     return c.json({
-      token: 'test-token',
+      token,
       user: {
-        id: 1,
-        name: 'admin',
-        email: 'admin@example.com',
-        is_admin: true
+        id: user.id,
+        username: user.name,
+        email: user.email,
+        is_admin: user.is_admin
       }
     });
   } catch (error) {
