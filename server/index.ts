@@ -195,18 +195,8 @@ app.route('/api', adminRoutes);
 export async function scheduled(event: any, env: any, ctx: any) {
   console.log('=== 定时任务触发事件 ===');
   console.log('事件信息:', event);
-  console.log('环境变量:', { hasDB: !!env.DB, hasSecretKey: !!env.SECRET_KEY });
   try {
     console.log('开始执行定时任务调度器...');
-    
-    // 检查数据库连接
-    if (!env.DB) {
-      throw new Error('数据库连接失败');
-    }
-    
-    // 测试数据库查询
-    const dbTest = await env.DB.prepare('SELECT 1 as test').first();
-    console.log('数据库测试结果:', dbTest);
     
     // 使用 Scheduler 类执行调度逻辑
     const scheduler = new Scheduler({ DB: env.DB });
@@ -215,7 +205,6 @@ export async function scheduled(event: any, env: any, ctx: any) {
     console.log('定时任务调度器执行成功');
   } catch (error) {
     console.error('定时任务调度器执行失败:', error);
-    console.error('错误堆栈:', error.stack);
   }
 }
 
