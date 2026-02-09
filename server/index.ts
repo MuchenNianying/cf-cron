@@ -120,12 +120,26 @@ app.get('/api/scheduler/run', async (c) => {
 // 测试定时任务触发点（模拟 Cloudflare Cron Trigger）
 app.get('/api/scheduler/test', async (c) => {
   try {
+    console.log('=== 手动触发定时任务测试 ===');
+    
+    // 检查数据库连接
+    if (!c.env.DB) {
+      console.error('数据库连接失败');
+      return c.json({ error: '数据库连接失败' }, 500);
+    }
+    
+    // 测试数据库查询
+    const dbTest = await c.env.DB.prepare('SELECT 1 as test').first();
+    console.log('数据库测试结果:', dbTest);
+    
     // 直接调用 scheduled 函数的逻辑
     const scheduler = new Scheduler(c.env);
     await scheduler.run();
     
+    console.log('定时任务触发测试成功');
     return c.json({ message: '定时任务触发测试成功' });
   } catch (error) {
+    console.error('定时任务触发测试失败:', error);
     return c.json({ error: '定时任务触发测试失败' }, 500);
   }
 });
