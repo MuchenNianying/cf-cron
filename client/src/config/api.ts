@@ -1,5 +1,5 @@
 // API配置
-const SERVER_URL = import.meta.env.SERVER_URL || '/api';
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || '/api';
 
 // 生成完整的API URL
 export const getApiUrl = (endpoint: string): string => {

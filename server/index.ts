@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 import authRoutes from './routes/auth';
 import taskRoutes from './routes/tasks';
 import taskLogRoutes from './routes/task_logs';
@@ -7,6 +8,14 @@ import userRoutes from './routes/users';
 import { Scheduler } from './services/scheduler';
 
 const app = new Hono();
+
+// CORS 中间件配置
+app.use('*', cors({
+  origin: '*', // 允许所有来源
+  allowHeaders: ['Content-Type', 'Authorization'],
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true
+}));
 
 // 验证 JWT
 type EnvWithJWT = {
@@ -207,3 +216,15 @@ export async function scheduled(event: any, env: any, ctx: any) {
 }
 
 export default app;
+
+// 如果在 Node.js 环境中运行，使用 Node.js 适配器启动服务器
+if (import.meta.url.startsWith('file:')) {
+  import('@hono/node-server').then(({ serve }) => {
+    const port = 8788;
+    console.log(`Server running on port ${port}`);
+    serve({
+      fetch: app.fetch,
+      port
+    });
+  });
+}
