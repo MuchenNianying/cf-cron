@@ -198,16 +198,9 @@ export async function scheduled(event: any, env: any, ctx: any) {
   try {
     console.log('开始执行定时任务调度器...');
     
-    // 直接执行调度器逻辑，不依赖于 Scheduler 类
-    const now = new Date();
-    console.log(`调度器运行时间: ${now.toISOString()}`);
-    
-    // 获取所有启用的任务
-    const tasks = await env.DB.prepare(
-      'SELECT id, name, spec, protocol, command, http_method, timeout, retry_times, retry_interval, request_headers, request_body FROM tasks WHERE status = 1'
-    ).all();
-    
-    console.log(`找到 ${tasks.results?.length || 0} 个启用的任务`);
+    // 使用 Scheduler 类执行调度逻辑
+    const scheduler = new Scheduler({ DB: env.DB });
+    await scheduler.run();
     
     console.log('定时任务调度器执行成功');
   } catch (error) {
