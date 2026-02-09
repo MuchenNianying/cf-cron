@@ -60,7 +60,12 @@ const TaskList = () => {
           console.log('计算下次执行时间:', task.spec);
           try {
             // 使用cron-parser计算下次执行时间
-            const interval = cronParser.parseExpression(task.spec);
+            // 支持6个字段的cron表达式（秒 分 时 日 月 周）
+            // 使用类型断言避免TypeScript错误
+            const parseExp = (cronParser as any).parseExpression || (cronParser as any);
+            const interval = parseExp(task.spec, {
+              type: 'seconds'
+            });
             next_run_at = interval.next().toISOString();
             console.log('下次执行时间:', next_run_at);
           } catch (error) {
