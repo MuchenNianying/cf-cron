@@ -216,15 +216,3 @@ export async function scheduled(event: any, env: any, ctx: any) {
 }
 
 export default app;
-
-// 如果在 Node.js 环境中运行，使用 Node.js 适配器启动服务器
-if (import.meta.url.startsWith('file:')) {
-  import('@hono/node-server').then(({ serve }) => {
-    const port = 8788;
-    console.log(`Server running on port ${port}`);
-    serve({
-      fetch: app.fetch,
-      port
-    });
-  });
-}

@@ -8,20 +8,17 @@
   },
   "scripts": {
     "dev": "wrangler dev",
-    "start": "tsx index.ts",
     "deploy": "wrangler deploy",
     "db:migrate": "wrangler d1 execute cf-cron-db --file=./sql/init.sql"
   },
   "dependencies": {
-    "@hono/node-server": "^1.19.9",
-    "bcryptjs": "^2.4.3",
-    "cron-parser": "^4.9.0",
     "hono": "^4.10.4",
+    "cron-parser": "^4.9.0",
     "jsonwebtoken": "^9.0.2",
-    "tsx": "^4.21.0"
+    "bcryptjs": "^2.4.3"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20251208.0",
-    "wrangler": "^4.44.0"
+    "wrangler": "^4.44.0",
+    "@cloudflare/workers-types": "^4.20251208.0"
   }
 }
