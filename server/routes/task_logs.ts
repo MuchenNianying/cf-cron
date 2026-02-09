@@ -9,7 +9,7 @@ const app = new Hono<{ Bindings: Env }>();
 
 // 获取任务日志列表
 app.get('/', async (c) => {
-  const { page = 1, pageSize = 20, task_id, status, protocol, start_time, end_time } = c.req.query();
+  const { page = 1, pageSize = 20, task_id, name, status, protocol, start_time, end_time } = c.req.query();
   
   let query = 'SELECT * FROM task_logs WHERE 1=1';
   const params: any[] = [];
@@ -17,6 +17,11 @@ app.get('/', async (c) => {
   if (task_id) {
     query += ' AND task_id = ?';
     params.push(task_id);
+  }
+  
+  if (name) {
+    query += ' AND name LIKE ?';
+    params.push('%' + name + '%');
   }
   
   if (status) {
@@ -45,6 +50,7 @@ app.get('/', async (c) => {
   const logs = await c.env.DB.prepare(query).bind(...params).all();
   const totalQuery = 'SELECT COUNT(*) as count FROM task_logs WHERE 1=1' + 
     (task_id ? ' AND task_id = ?' : '') + 
+    (name ? ' AND name LIKE ?' : '') + 
     (status ? ' AND status = ?' : '') + 
     (protocol ? ' AND protocol = ?' : '') +
     (start_time ? ' AND start_time >= ?' : '') + 

@@ -25,8 +25,52 @@ const generateHash = async (password: string, salt: string): Promise<string> => 
 };
 
 app.get('/', async (c) => {
-  const users = await c.env.DB.prepare('SELECT id, name, email, is_admin, status, created, updated FROM users ORDER BY id DESC').all();
-  return c.json({ users: users.results });
+  const { page = 1, pageSize = 20, page_size, name, email, status } = c.req.query();
+  const actualPageSize = page_size || pageSize;
+  
+  let query = 'SELECT id, name, email, is_admin, status, created, updated FROM users WHERE 1=1';
+  const params: any[] = [];
+  
+  if (name) {
+    query += ' AND name LIKE ?';
+    params.push('%' + name + '%');
+  }
+  
+  if (email) {
+    query += ' AND email LIKE ?';
+    params.push('%' + email + '%');
+  }
+  
+  if (status) {
+    query += ' AND status = ?';
+    params.push(status);
+  }
+  
+  query += ' ORDER BY id DESC LIMIT ? OFFSET ?';
+  params.push(parseInt(actualPageSize), (parseInt(page) - 1) * parseInt(actualPageSize));
+  
+  const users = await c.env.DB.prepare(query).bind(...params).all();
+  
+  let totalQuery = 'SELECT COUNT(*) as count FROM users WHERE 1=1';
+  const totalParams: any[] = [];
+  
+  if (name) {
+    totalQuery += ' AND name LIKE ?';
+    totalParams.push('%' + name + '%');
+  }
+  
+  if (email) {
+    totalQuery += ' AND email LIKE ?';
+    totalParams.push('%' + email + '%');
+  }
+  
+  if (status) {
+    totalQuery += ' AND status = ?';
+    totalParams.push(status);
+  }
+  
+  const total = await c.env.DB.prepare(totalQuery).bind(...totalParams).first();  
+  return c.json({ users: users.results, total: total?.count || 0 });
 });
 
 app.get('/:id', async (c) => {

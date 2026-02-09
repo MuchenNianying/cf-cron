@@ -46,10 +46,13 @@ const TaskList = () => {
   const fetchTasks = async () => {
     setLoading(true);
     try {
+      console.log('开始获取任务列表...');
       const data = await apiRequest(`tasks?name=${searchName}&tag=${searchTag}&page=${page}&page_size=${pageSize}`);
+      console.log('获取任务列表成功，返回数据:', data);
       
       // 转换后端返回的字段为前端Task接口定义的字段
       const tasksData = (data.tasks || []).map((task: any) => {
+        console.log('处理任务:', task);
         let next_run_at = null;
         try {
           // 只有当task.spec不为空且有效时才计算下次执行时间

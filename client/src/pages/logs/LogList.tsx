@@ -34,7 +34,7 @@ const LogList = () => {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const data = await apiRequest(`task-logs?task_id=${searchTask}&status=${searchStatus}&page=${page}&page_size=${pageSize}`);
+      const data = await apiRequest(`task-logs?name=${searchTask}&status=${searchStatus}&page=${page}&page_size=${pageSize}`);
       setLogs(data.logs || []);
       setTotal(data.total || 0);
     } catch (err: any) {

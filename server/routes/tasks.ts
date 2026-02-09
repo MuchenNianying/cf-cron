@@ -18,9 +18,16 @@ const requireAdmin = async (c: any, next: any) => {
 
 // 获取任务列表（所有认证用户都可以访问）
 app.get('/', async (c) => {
-  const { page = 1, pageSize = 20, status, protocol, tag } = c.req.query();  
+  const { page = 1, pageSize = 20, page_size, name, status, protocol, tag } = c.req.query();
+  const actualPageSize = page_size || pageSize;
+  
   let query = 'SELECT * FROM tasks WHERE 1=1';
   const params: any[] = [];
+  
+  if (name) {
+    query += ' AND name LIKE ?';
+    params.push('%' + name + '%');
+  }
   
   if (status) {
     query += ' AND status = ?';
@@ -38,10 +45,34 @@ app.get('/', async (c) => {
   }
   
   query += ' ORDER BY id DESC LIMIT ? OFFSET ?';
-  params.push(parseInt(pageSize), (parseInt(page) - 1) * parseInt(pageSize));
+  params.push(parseInt(actualPageSize), (parseInt(page) - 1) * parseInt(actualPageSize));
   
   const tasks = await c.env.DB.prepare(query).bind(...params).all();
-  const total = await c.env.DB.prepare('SELECT COUNT(*) as count FROM tasks WHERE 1=1' + (status ? ' AND status = ?' : '')).bind(...(status ? [status] : [])).first();  
+  
+  let totalQuery = 'SELECT COUNT(*) as count FROM tasks WHERE 1=1';
+  const totalParams: any[] = [];
+  
+  if (name) {
+    totalQuery += ' AND name LIKE ?';
+    totalParams.push('%' + name + '%');
+  }
+  
+  if (status) {
+    totalQuery += ' AND status = ?';
+    totalParams.push(status);
+  }
+  
+  if (protocol) {
+    totalQuery += ' AND protocol = ?';
+    totalParams.push(protocol);
+  }
+  
+  if (tag) {
+    totalQuery += ' AND tag = ?';
+    totalParams.push(tag);
+  }
+  
+  const total = await c.env.DB.prepare(totalQuery).bind(...totalParams).first();  
   return c.json({ tasks: tasks.results, total: total?.count || 0 });
 });
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Form, Input, message, Space, Card, Modal, Select } from 'antd';
-import { ReloadOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Table, Button, Form, Input, message, Space, Card, Modal, Select, Row, Col } from 'antd';
+import { ReloadOutlined, PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import { apiRequest } from '../../config/api';
 import type { ColumnsType } from 'antd/es/table';
 
@@ -23,12 +23,15 @@ const UserList = () => {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const [total, setTotal] = useState(0);
+  const [searchName, setSearchName] = useState('');
+  const [searchEmail, setSearchEmail] = useState('');
+  const [searchStatus, setSearchStatus] = useState('');
   const [form] = Form.useForm();
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const data = await apiRequest(`users`);
+      const data = await apiRequest(`users?name=${searchName}&email=${searchEmail}&status=${searchStatus}&page=${page}&page_size=${pageSize}`);
       // 转换后端返回的字段为前端User接口定义的字段
       const usersData = (data.users || []).map((user: any) => ({
         id: user.id,
@@ -41,7 +44,7 @@ const UserList = () => {
         updated_at: user.updated,
       }));
       setUsers(usersData);
-      setTotal(usersData.length);
+      setTotal(data.total || 0);
     } catch (err: any) {
       message.error(err.message || '获取用户列表失败');
     } finally {
@@ -51,7 +54,7 @@ const UserList = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, [page, pageSize]);
+  }, [page, pageSize, searchName, searchEmail, searchStatus]);
 
   const handleRefresh = () => {
     fetchUsers();
@@ -224,6 +227,38 @@ const UserList = () => {
           刷新
         </Button>
       </Space>
+
+      <Row gutter={16} style={{ marginBottom: 16 }}>
+        <Col span={8}>
+          <Input
+            placeholder="用户名"
+            value={searchName}
+            onChange={(e) => setSearchName(e.target.value)}
+            prefix={<SearchOutlined />}
+          />
+        </Col>
+        <Col span={8}>
+          <Input
+            placeholder="邮箱"
+            value={searchEmail}
+            onChange={(e) => setSearchEmail(e.target.value)}
+            prefix={<SearchOutlined />}
+          />
+        </Col>
+        <Col span={8}>
+          <Select
+            placeholder="状态"
+            value={searchStatus}
+            onChange={(value) => setSearchStatus(value)}
+            style={{ width: '100%' }}
+            options={[
+              { value: '', label: '全部' },
+              { value: '1', label: '启用' },
+              { value: '0', label: '禁用' },
+            ]}
+          />
+        </Col>
+      </Row>
 
       <Table
         columns={columns}
