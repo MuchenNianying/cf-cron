@@ -29,7 +29,7 @@ jobs:
         working-directory: ./client
         run: npm run build
         env:
-          SERVER_URL: ${{ secrets.SERVER_URL }}
+          VITE_SERVER_URL: https://server.cron.cc.cd/api
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
