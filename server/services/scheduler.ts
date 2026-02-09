@@ -30,8 +30,54 @@ export class Scheduler {
     const now = new Date();
     console.log(`=== 调度器运行开始: ${now.toISOString()} ===`);
     
+    // 添加测试任务，用于验证执行逻辑
+    const testTask: Task = {
+      id: 999,
+      name: '测试任务',
+      spec: '* * * * *', // 每分钟执行一次
+      protocol: 1,
+      command: 'https://httpbin.org/get',
+      http_method: 1,
+      timeout: 60,
+      retry_times: 0,
+      retry_interval: 0,
+      request_headers: '',
+      request_body: ''
+    };
+    
+    console.log('添加测试任务:', testTask);
+    
+    // 测试 cron 表达式解析
+    console.log('\n测试 cron 表达式解析:');
+    try {
+      const interval = cronParser.parseExpression(testTask.spec, { utc: true });
+      const nextRun = interval.next().toDate();
+      const resetInterval = cronParser.parseExpression(testTask.spec, { utc: true });
+      const prevRun = resetInterval.prev().toDate();
+      console.log(`测试任务 - 下一个执行时间: ${nextRun.toISOString()}`);
+      console.log(`测试任务 - 上一个执行时间: ${prevRun.toISOString()}`);
+    } catch (error) {
+      console.error('测试任务 - cron 表达式解析失败:', error);
+    }
+    
+    // 测试任务执行判断
+    console.log('\n测试任务执行判断:');
+    const shouldExecute = this.shouldExecuteTask(testTask.spec, now);
+    console.log(`测试任务 - 是否应该执行: ${shouldExecute}`);
+    
+    // 如果应该执行，直接执行测试任务
+    if (shouldExecute) {
+      console.log('\n执行测试任务...');
+      try {
+        await this.executeTask(testTask);
+        console.log('测试任务执行完成');
+      } catch (error) {
+        console.error('测试任务执行失败:', error);
+      }
+    }
+    
     // 获取所有启用的任务
-    console.log('开始查询启用的任务...');
+    console.log('\n开始查询启用的任务...');
     try {
       const tasks = await this.db.prepare(
         'SELECT id, name, spec, protocol, command, http_method, timeout, retry_times, retry_interval, request_headers, request_body FROM tasks WHERE status = 1'
@@ -85,10 +131,10 @@ export class Scheduler {
           
           // 检查是否需要执行任务
           console.log('开始检查任务是否应该执行...');
-          const shouldExecute = this.shouldExecuteTask(task.spec, now);
-          console.log(`任务是否应该执行: ${shouldExecute}`);
+          const shouldExecuteTask = this.shouldExecuteTask(task.spec, now);
+          console.log(`任务是否应该执行: ${shouldExecuteTask}`);
           
-          if (shouldExecute) {
+          if (shouldExecuteTask) {
             // 检查是否已经执行过（避免重复执行）
             console.log('检查是否已经执行过...');
             
@@ -206,25 +252,37 @@ export class Scheduler {
 
   private async createTaskLog(task: Task): Promise<number> {
     console.log(`创建任务日志: task_id=${task.id}, name=${task.name}`);
-    const result = await this.db.prepare(
-      'INSERT INTO task_logs (task_id, name, spec, protocol, command, timeout, retry_times, hostname, status, result) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).bind(task.id, task.name, task.spec, task.protocol, task.command, task.timeout || 0, task.retry_times || 0, 'localhost', 1, '执行中...').run();
-    
-    const logId = result.meta?.last_row_id || result.lastInsertRowid;
-    console.log(`任务日志创建成功: logId=${logId}, result=`, result);
-    
-    if (!logId) {
-      throw new Error('无法获取任务日志 ID');
+    try {
+      const result = await this.db.prepare(
+        'INSERT INTO task_logs (task_id, name, spec, protocol, command, timeout, retry_times, hostname, status, result) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(task.id, task.name, task.spec, task.protocol, task.command, task.timeout || 0, task.retry_times || 0, 'localhost', 1, '执行中...').run();
+      
+      const logId = result.meta?.last_row_id || result.lastInsertRowid;
+      console.log(`任务日志创建成功: logId=${logId}, result=`, result);
+      
+      if (!logId) {
+        throw new Error('无法获取任务日志 ID');
+      }
+      
+      return logId;
+    } catch (error) {
+      console.error('创建任务日志失败:', error);
+      // 如果创建日志失败，返回一个临时 ID
+      return Date.now();
     }
-    
-    return logId;
   }
 
   private async updateTaskLog(id: number, status: number, result: string) {
     console.log(`更新任务日志: id=${id}, status=${status}, result=${result}`);
-    await this.db.prepare(
-      'UPDATE task_logs SET status = ?, result = ?, end_time = ? WHERE id = ?'
-    ).bind(status, result, new Date().toISOString(), id).run();
+    try {
+      await this.db.prepare(
+        'UPDATE task_logs SET status = ?, result = ?, end_time = ? WHERE id = ?'
+      ).bind(status, result, new Date().toISOString(), id).run();
+      console.log('任务日志更新成功');
+    } catch (error) {
+      console.error('更新任务日志失败:', error);
+      // 如果更新日志失败，忽略错误，继续执行
+    }
   }
 
   private async executeHTTPTask(task: Task): Promise<string> {
