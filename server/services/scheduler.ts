@@ -48,8 +48,8 @@ export class Scheduler {
         console.log(`\n处理任务: ${task.id} - ${task.name}`);
         console.log(`任务配置: cron=${task.spec}, protocol=${task.protocol}, command=${task.command}`);
         
-        // 解析 cron 表达式
-        const interval = cronParser.parseExpression(task.spec);
+        // 解析 cron 表达式，设置时区为 UTC
+        const interval = cronParser.parseExpression(task.spec, { utc: true });
         
         // 检查任务是否应该在当前时间执行
         // 方法：检查当前时间是否是任务的下一个执行时间点
@@ -110,7 +110,8 @@ export class Scheduler {
    */
   private shouldExecuteTask(cronExpression: string, currentTime: Date): boolean {
     try {
-      const interval = cronParser.parseExpression(cronExpression);
+      // 解析 cron 表达式，设置时区为 UTC
+      const interval = cronParser.parseExpression(cronExpression, { utc: true });
       const nextRun = interval.next().toDate();
       const prevRun = interval.prev().toDate();
       
