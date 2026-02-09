@@ -85,7 +85,20 @@ app.post('/login', async (c) => {
       }
     });
   } catch (error) {
-    return c.json({ error: '登录失败，请稍后重试' }, 500);
+    try {
+      console.error('登录错误:', error);
+    } catch (logError) {
+      // 忽略日志错误
+    }
+    try {
+      return c.json({ error: '登录失败，请稍后重试' }, 500);
+    } catch (responseError) {
+      // 如果 c.json() 失败，尝试使用基本的响应方法
+      return new Response(JSON.stringify({ error: '登录失败，请稍后重试' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
   }
 });
 

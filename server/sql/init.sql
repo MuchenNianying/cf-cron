@@ -34,12 +34,10 @@ CREATE TABLE IF NOT EXISTS tasks (
   remark VARCHAR(100) NOT NULL DEFAULT '',
   status TINYINT NOT NULL DEFAULT 0,
   created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  deleted DATETIME
+  deleted DATETIME,
+  request_headers TEXT NOT NULL DEFAULT '',
+  request_body TEXT NOT NULL DEFAULT ''
 );
-
--- 添加请求头和请求体字段到 tasks 表
-ALTER TABLE tasks ADD COLUMN request_headers TEXT NOT NULL DEFAULT '';
-ALTER TABLE tasks ADD COLUMN request_body TEXT NOT NULL DEFAULT '';
 
 -- 创建任务日志表
 CREATE TABLE IF NOT EXISTS task_logs (
@@ -90,7 +88,7 @@ CREATE INDEX IF NOT EXISTS idx_mail_users_status ON mail_users(status);
 -- 插入默认管理员用户
 INSERT OR IGNORE INTO users (name, password, salt, email, is_admin, status) VALUES (
   'admin',
-  'ac0e7d037817094e9e0b4441f9bae3209d67b02fa484917065f71b16109a1a78',
+  '958d51602bbfbd18b2a084ba848a827c29952bfef170c936419b0922994c0589',
   '123456',
   'admin@example.com',
   1,

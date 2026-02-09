@@ -60,10 +60,9 @@ app.get('/:id', async (c) => {
 app.post('/', requireAdmin, async (c) => {
   const task = await c.req.json();  
   const result = await c.env.DB.prepare(
-    'INSERT INTO tasks (name, level, dependency_task_id, dependency_status, spec, protocol, command, http_method, timeout, multi, retry_times, retry_interval, notify_status, notify_type, notify_receiver_id, notify_keyword, tag, remark, status, request_headers, request_body) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO tasks (name, dependency_task_id, dependency_status, spec, protocol, command, http_method, timeout, multi, retry_times, retry_interval, notify_status, notify_type, notify_receiver_id, notify_keyword, tag, remark, status, request_headers, request_body) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
   ).bind(
     task.name,
-    task.level || 1,
     task.dependency_task_id || '',
     task.dependency_status || 1,
     task.spec,
@@ -96,10 +95,9 @@ app.put('/:id', requireAdmin, async (c) => {
   const id = c.req.param('id');
   const task = await c.req.json();  
   const result = await c.env.DB.prepare(
-    'UPDATE tasks SET name = ?, level = ?, dependency_task_id = ?, dependency_status = ?, spec = ?, protocol = ?, command = ?, http_method = ?, timeout = ?, multi = ?, retry_times = ?, retry_interval = ?, notify_status = ?, notify_type = ?, notify_receiver_id = ?, notify_keyword = ?, tag = ?, remark = ?, status = ?, request_headers = ?, request_body = ? WHERE id = ?'
+    'UPDATE tasks SET name = ?, dependency_task_id = ?, dependency_status = ?, spec = ?, protocol = ?, command = ?, http_method = ?, timeout = ?, multi = ?, retry_times = ?, retry_interval = ?, notify_status = ?, notify_type = ?, notify_receiver_id = ?, notify_keyword = ?, tag = ?, remark = ?, status = ?, request_headers = ?, request_body = ? WHERE id = ?'
   ).bind(
     task.name,
-    task.level || 1,
     task.dependency_task_id || '',
     task.dependency_status || 1,
     task.spec,

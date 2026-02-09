@@ -28,9 +28,20 @@ const UserList = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const data = await apiRequest(`users?page=${page}&page_size=${pageSize}`);
-      setUsers(data.users || []);
-      setTotal(data.total || 0);
+      const data = await apiRequest(`users`);
+      // 转换后端返回的字段为前端User接口定义的字段
+      const usersData = (data.users || []).map((user: any) => ({
+        id: user.id,
+        username: user.name, // 后端返回name，前端使用username
+        nickname: user.name, // 后端没有nickname，使用name作为默认值
+        email: user.email,
+        role: user.is_admin === 1 ? 'admin' : 'user', // 后端返回is_admin，前端使用role
+        status: user.status,
+        created_at: user.created,
+        updated_at: user.updated,
+      }));
+      setUsers(usersData);
+      setTotal(usersData.length);
     } catch (err: any) {
       message.error(err.message || '获取用户列表失败');
     } finally {
@@ -53,9 +64,17 @@ const UserList = () => {
     setIsModalVisible(true);
   };
 
-  const handleEdit = (user: User) => {
+  const handleEdit = (user: any) => {
     setEditingUser(user);
-    form.setFieldsValue(user);
+    // 转换后端返回的字段为前端表单字段
+    const formValues = {
+      username: user.name || user.username, // 后端返回name，前端使用username
+      nickname: user.nickname || user.name, // 后端没有nickname，使用name作为默认值
+      email: user.email, // 保持不变
+      role: user.is_admin === 1 ? 'admin' : 'user', // 后端返回is_admin，前端使用role
+      status: user.status, // 保持不变
+    };
+    form.setFieldsValue(formValues);
     setIsModalVisible(true);
   };
 
@@ -85,10 +104,19 @@ const UserList = () => {
       const url = editingUser ? `users/${editingUser.id}` : 'users';
       const method = editingUser ? 'PUT' : 'POST';
 
+      // 转换前端表单字段为后端 API 期望的字段
+      const userData = {
+        name: values.username, // 前端的 username 字段对应后端的 name 字段
+        password: values.password,
+        email: values.email,
+        is_admin: values.role === 'admin' ? 1 : 0, // 前端的 role 字段对应后端的 is_admin 字段
+        status: values.status,
+      };
+
       // 对于编辑操作，只有当密码被修改时才包含密码字段
       const body = editingUser 
-        ? { ...values, password: values.password ? values.password : undefined }
-        : values;
+        ? { ...userData, password: values.password ? values.password : undefined }
+        : userData;
 
       await apiRequest(url, {
         method,

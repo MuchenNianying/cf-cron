@@ -4,6 +4,8 @@ import { ReloadOutlined, PlusOutlined, SearchOutlined, PlayCircleOutlined, EditO
 import { useNavigate } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
 import { apiRequest } from '../../config/api';
+// 导入cron-parser
+import * as cronParser from 'cron-parser';
 
 interface Task {
   id: number;
@@ -45,7 +47,39 @@ const TaskList = () => {
     setLoading(true);
     try {
       const data = await apiRequest(`tasks?name=${searchName}&tag=${searchTag}&page=${page}&page_size=${pageSize}`);
-      setTasks(data.tasks || []);
+      
+      // 转换后端返回的字段为前端Task接口定义的字段
+      const tasksData = (data.tasks || []).map((task: any) => {
+        let next_run_at = null;
+        try {
+          // 只有当task.spec不为空且有效时才计算下次执行时间
+          if (task.spec && typeof task.spec === 'string' && task.spec.trim() !== '') {
+            // 使用cron-parser计算下次执行时间
+            const interval = cronParser.parseExpression(task.spec);
+            next_run_at = interval.next().toISOString();
+          }
+        } catch (error) {
+          console.error('解析cron表达式失败:', error);
+        }
+        
+        return {
+          id: task.id,
+          name: task.name,
+          spec: task.spec || '',
+          url: task.command || '', // 后端的 command 字段对应前端的 url 字段
+          method: task.http_method === 1 ? 'GET' : 'POST', // 转换数字为请求方法字符串，只支持 GET 和 POST
+          headers: task.request_headers || '', // 后端的 request_headers 字段对应前端的 headers 字段
+          body: task.request_body || '', // 后端的 request_body 字段对应前端的 body 字段
+          tag: task.tag || '',
+          remark: task.remark || '',
+          status: task.status || 0,
+          created_at: task.created || new Date().toISOString(),
+          updated_at: task.updated || new Date().toISOString(),
+          next_run_at: next_run_at,
+        };
+      });
+      
+      setTasks(tasksData);
       setTotal(data.total || 0);
     } catch (err: any) {
       message.error(err.message || '获取任务失败');
