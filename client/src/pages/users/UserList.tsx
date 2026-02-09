@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Form, Input, message, Space, Card, Modal, Select, Row, Col } from 'antd';
+import { Table, Button, Form, Input, message, Space, Card, Modal, Select } from 'antd';
 import { ReloadOutlined, PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import { apiRequest } from '../../config/api';
 import type { ColumnsType } from 'antd/es/table';
@@ -59,6 +59,11 @@ const UserList = () => {
   const handleRefresh = () => {
     fetchUsers();
     message.success('刷新成功');
+  };
+
+  const handleSearch = () => {
+    setPage(1);
+    fetchUsers();
   };
 
   const handleCreate = () => {
@@ -219,46 +224,55 @@ const UserList = () => {
 
   return (
     <Card>
-      <Space style={{ marginBottom: '16px' }}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-          新增用户
-        </Button>
-        <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
-          刷新
-        </Button>
-      </Space>
-
-      <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col span={8}>
+      <Form layout="inline" style={{ marginBottom: '16px' }}>
+        <Form.Item label="用户名">
           <Input
-            placeholder="用户名"
+            placeholder="请输入用户名"
             value={searchName}
             onChange={(e) => setSearchName(e.target.value)}
             prefix={<SearchOutlined />}
+            style={{ width: 200 }}
           />
-        </Col>
-        <Col span={8}>
+        </Form.Item>
+        <Form.Item label="邮箱">
           <Input
-            placeholder="邮箱"
+            placeholder="请输入邮箱"
             value={searchEmail}
             onChange={(e) => setSearchEmail(e.target.value)}
             prefix={<SearchOutlined />}
+            style={{ width: 200 }}
           />
-        </Col>
-        <Col span={8}>
+        </Form.Item>
+        <Form.Item label="状态">
           <Select
-            placeholder="状态"
+            placeholder="请选择状态"
             value={searchStatus}
             onChange={(value) => setSearchStatus(value)}
-            style={{ width: '100%' }}
-            options={[
-              { value: '', label: '全部' },
-              { value: '1', label: '启用' },
-              { value: '0', label: '禁用' },
-            ]}
-          />
-        </Col>
-      </Row>
+            style={{ width: 120 }}
+            allowClear
+          >
+            <Select.Option value="1">启用</Select.Option>
+            <Select.Option value="0">禁用</Select.Option>
+          </Select>
+        </Form.Item>
+        <Form.Item>
+          <Space>
+            <Button type="primary" onClick={handleSearch}>
+              搜索
+            </Button>
+            <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
+              刷新
+            </Button>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={handleCreate}
+            >
+              新增用户
+            </Button>
+          </Space>
+        </Form.Item>
+      </Form>
 
       <Table
         columns={columns}

@@ -9,7 +9,8 @@ const app = new Hono<{ Bindings: Env }>();
 
 // 获取任务日志列表
 app.get('/', async (c) => {
-  const { page = 1, pageSize = 20, task_id, name, status, protocol, start_time, end_time } = c.req.query();
+  const { page = 1, pageSize = 20, page_size, task_id, name, status, protocol, start_time, end_time } = c.req.query();
+  const actualPageSize = page_size || pageSize;
   
   let query = 'SELECT * FROM task_logs WHERE 1=1';
   const params: any[] = [];
@@ -45,7 +46,7 @@ app.get('/', async (c) => {
   }
   
   query += ' ORDER BY id DESC LIMIT ? OFFSET ?';
-  params.push(parseInt(pageSize), (parseInt(page) - 1) * parseInt(pageSize));
+  params.push(parseInt(actualPageSize), (parseInt(page) - 1) * parseInt(actualPageSize));
   
   const logs = await c.env.DB.prepare(query).bind(...params).all();
   const totalQuery = 'SELECT COUNT(*) as count FROM task_logs WHERE 1=1' + 
