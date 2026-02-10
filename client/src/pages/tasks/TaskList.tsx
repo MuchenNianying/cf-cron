@@ -291,7 +291,7 @@ const TaskList = () => {
 
   return (
     <Card>
-      <Form layout="inline" style={{ marginBottom: '16px' }}>
+      <Form layout="inline" style={{ marginBottom: '16px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <Form.Item label="任务名称">
           <Input
             placeholder="请输入任务名称"
@@ -341,6 +341,14 @@ const TaskList = () => {
           onShowSizeChange: (_, size) => {
             setPageSize(size);
             setPage(1);
+          },
+          locale: {
+            items_per_page: '条/页',
+            jump_to: '跳至',
+            page: '页',
+            prev_page: '上一页',
+            next_page: '下一页',
+            total: `共 ${total} 条`,
           },
         }}
         bordered
