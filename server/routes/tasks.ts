@@ -54,7 +54,20 @@ app.get('/', async (c) => {
   const enrichedTasks = (tasks.results || []).map((task: any) => {
     if (task.spec) {
       try {
-        const interval = cronParser.parseExpression(task.spec, { utc: true });
+        // 检查 cron 表达式是否是 6 位格式（包含秒字段）
+        const cronParts = task.spec.trim().split(/\s+/);
+        let specToParse = task.spec;
+        
+        if (cronParts.length === 6) {
+          // 6 位格式：秒 分 时 日 月 星期
+          // cron-parser 默认支持 5 位格式，需要跳过秒字段
+          specToParse = cronParts.slice(1).join(' ');
+        } else if (cronParts.length === 5) {
+          // 5 位格式：分 时 日 月 星期
+          specToParse = task.spec;
+        }
+        
+        const interval = cronParser.parseExpression(specToParse, { tz: 'Asia/Shanghai' });
         task.next_run_at = interval.next().toDate().toISOString();
       } catch (e) {
         task.next_run_at = '无效表达式';
@@ -103,7 +116,20 @@ app.get('/:id', async (c) => {
   // 计算下次执行时间
   if (task.spec) {
     try {
-      const interval = cronParser.parseExpression(task.spec, { utc: true });
+      // 检查 cron 表达式是否是 6 位格式（包含秒字段）
+      const cronParts = task.spec.trim().split(/\s+/);
+      let specToParse = task.spec;
+      
+      if (cronParts.length === 6) {
+        // 6 位格式：秒 分 时 日 月 星期
+        // cron-parser 默认支持 5 位格式，需要跳过秒字段
+        specToParse = cronParts.slice(1).join(' ');
+      } else if (cronParts.length === 5) {
+        // 5 位格式：分 时 日 月 星期
+        specToParse = task.spec;
+      }
+      
+      const interval = cronParser.parseExpression(specToParse, { utc: true });
       task.next_run_at = interval.next().toDate().toISOString();
     } catch (e) {
       task.next_run_at = '无效表达式';

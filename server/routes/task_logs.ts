@@ -3,9 +3,76 @@ import { DB } from '@cloudflare/workers-types';
 
 type Env = {
   DB: DB;
+  SECRET_KEY: string;
 };
 
 const app = new Hono<{ Bindings: Env }>();
+
+// 验证 JWT
+const verifyToken = async (token: string, secret: string): Promise<any> => {
+  try {
+    const [encodedHeader, encodedPayload, encodedSignature] = token.split('.');
+    
+    // 验证签名
+    const encoder = new TextEncoder();
+    const data = encoder.encode(`${encodedHeader}.${encodedPayload}`);
+    const secretKey = secret && secret.length > 0 ? secret : 'default_secret';
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secretKey),
+      { name: 'HMAC', hash: { name: 'SHA-256' } },
+      false,
+      ['verify']
+    );
+    
+    const signatureBuffer = await crypto.subtle.verify(
+      'HMAC',
+      key,
+      Uint8Array.from(atob(encodedSignature), c => c.charCodeAt(0)),
+      data
+    );
+    
+    if (!signatureBuffer) {
+      throw new Error('Invalid signature');
+    }
+    
+    // 解析 payload
+    const payload = JSON.parse(atob(encodedPayload));
+    
+    // 验证过期时间
+    if (payload.exp && Date.now() / 1000 > payload.exp) {
+      throw new Error('Token expired');
+    }
+    
+    return payload;
+  } catch (error) {
+    throw new Error('Invalid token');
+  }
+};
+
+// 管理员权限检查中间件
+const requireAdmin = async (c: any, next: any) => {
+  const token = c.req.header('Authorization')?.replace('Bearer ', '');
+  if (!token) {
+    return c.json({ error: '未授权' }, 401);
+  }
+  
+  try {
+    const secret = c.env.SECRET_KEY || 'default_secret';
+    const payload = await verifyToken(token, secret);
+    
+    // 检查是否为管理员
+    if (!payload.is_admin) {
+      return c.json({ error: '需要管理员权限' }, 403);
+    }
+    
+    // 将用户信息存储到上下文中
+    c.set('user', payload);
+    await next();
+  } catch (error) {
+    return c.json({ error: '无效的token' }, 401);
+  }
+};
 
 // 获取任务日志列表
 app.get('/', async (c) => {
@@ -73,8 +140,8 @@ app.get('/:id', async (c) => {
   return c.json({ log });
 });
 
-// 清空任务日志
-app.delete('/clear', async (c) => {
+// 清空任务日志（需要管理员权限）
+app.delete('/clear', requireAdmin, async (c) => {
   const result = await c.env.DB.prepare('DELETE FROM task_logs').run();
   
   if (!result.success) {
@@ -84,13 +151,31 @@ app.delete('/clear', async (c) => {
   return c.json({ message: '清空日志成功' });
 });
 
-// 删除指定时间前的任务日志
-app.delete('/remove', async (c) => {
+// 删除指定时间前的任务日志（需要管理员权限）
+app.delete('/remove', requireAdmin, async (c) => {
   const { months } = await c.req.json();
   const time = new Date();
   time.setMonth(time.getMonth() - months);
   
   const result = await c.env.DB.prepare('DELETE FROM task_logs WHERE start_time <= ?').bind(time.toISOString()).run();
+  
+  if (!result.success) {
+    return c.json({ error: '删除日志失败' }, 500);
+  }
+  
+  return c.json({ message: '删除日志成功' });
+});
+
+// 删除选中的任务日志（需要管理员权限）
+app.delete('/batch', requireAdmin, async (c) => {
+  const { ids } = await c.req.json();
+  
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return c.json({ error: '请选择要删除的日志' }, 400);
+  }
+  
+  const placeholders = ids.map(() => '?').join(',');
+  const result = await c.env.DB.prepare(`DELETE FROM task_logs WHERE id IN (${placeholders})`).bind(...ids).run();
   
   if (!result.success) {
     return c.json({ error: '删除日志失败' }, 500);

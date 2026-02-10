@@ -21,7 +21,7 @@ const UserList = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
   const [searchName, setSearchName] = useState('');
   const [searchEmail, setSearchEmail] = useState('');
@@ -286,7 +286,10 @@ const UserList = () => {
           showSizeChanger: true,
           showQuickJumper: true,
           onChange: (newPage) => setPage(newPage),
-          onShowSizeChange: () => setPage(1),
+          onShowSizeChange: (_, size) => {
+            setPageSize(size);
+            setPage(1);
+          },
         }}
         bordered
       />

@@ -28,7 +28,7 @@ const TaskList = () => {
   const [searchName, setSearchName] = useState('');
   const [searchTag, setSearchTag] = useState('');
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
   const [user, setUser] = useState<any>(null);
 
@@ -171,7 +171,15 @@ const TaskList = () => {
           return next_run_at;
         }
         try {
-          return new Date(next_run_at).toLocaleString('zh-CN');
+          const date = new Date(next_run_at);
+          // 使用本地时间（上海时间）显示
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          const seconds = String(date.getSeconds()).padStart(2, '0');
+          return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
         } catch (error) {
           return '无效时间';
         }
@@ -330,7 +338,10 @@ const TaskList = () => {
           showSizeChanger: true,
           showQuickJumper: true,
           onChange: (newPage) => setPage(newPage),
-          onShowSizeChange: () => setPage(1),
+          onShowSizeChange: (_, size) => {
+            setPageSize(size);
+            setPage(1);
+          },
         }}
         bordered
       />

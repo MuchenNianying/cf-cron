@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Form, Input, message, Space, Card, Select } from 'antd';
-import { ReloadOutlined, SearchOutlined } from '@ant-design/icons';
+import { Table, Button, Form, Input, message, Space, Card, Select, Modal } from 'antd';
+import { ReloadOutlined, SearchOutlined, DeleteOutlined } from '@ant-design/icons';
 import { apiRequest } from '../../config/api';
 import type { ColumnsType } from 'antd/es/table';
-import Modal from 'antd/es/modal/Modal';
 
 interface TaskLog {
   id: number;
@@ -26,10 +25,19 @@ const LogList = () => {
   const [searchTask, setSearchTask] = useState('');
   const [searchStatus, setSearchStatus] = useState('');
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [selectedLog, setSelectedLog] = useState<TaskLog | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -51,6 +59,50 @@ const LogList = () => {
   const handleRefresh = () => {
     fetchLogs();
     message.success('刷新成功');
+  };
+
+  const handleClearLogs = async () => {
+    if (selectedRowKeys.length > 0) {
+      // 显示批量删除确认框
+      Modal.confirm({
+        title: '确认',
+        content: `确定要删除选中的 ${selectedRowKeys.length} 条任务日志吗？`,
+        okText: '确定',
+        cancelText: '取消',
+        onOk: async () => {
+          try {
+            await apiRequest('task-logs/batch', {
+              method: 'DELETE',
+              body: JSON.stringify({ ids: selectedRowKeys })
+            });
+            message.success('删除选中日志成功');
+            setSelectedRowKeys([]);
+            fetchLogs();
+          } catch (err: any) {
+            message.error(err.message || '删除选中日志失败');
+          }
+        },
+      });
+    } else {
+      // 显示清空所有确认框
+      Modal.confirm({
+        title: '确认',
+        content: '确定要清空所有任务日志吗？',
+        okText: '确定',
+        cancelText: '取消',
+        onOk: async () => {
+          try {
+            await apiRequest('task-logs/clear', {
+              method: 'DELETE'
+            });
+            message.success('清空所有日志成功');
+            fetchLogs();
+          } catch (err: any) {
+            message.error(err.message || '清空所有日志失败');
+          }
+        },
+      });
+    }
   };
 
   const handleShowOutput = (log: TaskLog) => {
@@ -177,7 +229,8 @@ const LogList = () => {
             style={{ width: 120 }}
             allowClear
           >
-            <Select.Option value="1">成功</Select.Option>
+            <Select.Option value="2">成功</Select.Option>
+            <Select.Option value="1">执行中</Select.Option>
             <Select.Option value="0">失败</Select.Option>
           </Select>
         </Form.Item>
@@ -189,6 +242,15 @@ const LogList = () => {
             <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
               刷新
             </Button>
+            {user?.is_admin === 1 && (
+              <Button 
+                danger 
+                icon={<DeleteOutlined />}
+                onClick={handleClearLogs}
+              >
+                清空日志
+              </Button>
+            )}
           </Space>
         </Form.Item>
       </Form>
@@ -198,6 +260,10 @@ const LogList = () => {
         dataSource={logs}
         rowKey="id"
         loading={loading}
+        rowSelection={{
+          selectedRowKeys,
+          onChange: setSelectedRowKeys,
+        }}
         pagination={{
           current: page,
           pageSize: pageSize,
@@ -205,7 +271,10 @@ const LogList = () => {
           showSizeChanger: true,
           showQuickJumper: true,
           onChange: (newPage) => setPage(newPage),
-          onShowSizeChange: () => setPage(1),
+          onShowSizeChange: (_, size) => {
+            setPageSize(size);
+            setPage(1);
+          },
         }}
         bordered
         expandable={{
@@ -267,6 +336,7 @@ const LogList = () => {
           </div>
         </div>
       </Modal>
+
     </Card>
   );
 };

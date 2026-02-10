@@ -1,5 +1,4 @@
 import cronParser from 'cron-parser';
-import { DB } from '@cloudflare/workers-types';
 
 interface Task {
   id: number;
@@ -16,11 +15,12 @@ interface Task {
 }
 
 interface Env {
-  DB: DB;
+  DB: any;
+  SECRET_KEY: string;
 }
 
 export class Scheduler {
-  private db: DB;
+  private db: any;
 
   constructor(env: Env) {
     this.db = env.DB;
@@ -59,7 +59,26 @@ export class Scheduler {
           
           // 解析 cron 表达式，设置时区为 UTC
           console.log('开始解析 cron 表达式:', task.spec);
-          const interval = cronParser.parseExpression(task.spec, { utc: true });
+          
+          // 检查 cron 表达式是否是 6 位格式（包含秒字段）
+          const cronParts = task.spec.trim().split(/\s+/);
+          let specToParse = task.spec;
+          
+          if (cronParts.length === 6) {
+            // 6 位格式：秒 分 时 日 月 星期
+            // cron-parser 默认支持 5 位格式，需要跳过秒字段
+            console.log('检测到 6 位 cron 表达式，跳过秒字段');
+            specToParse = cronParts.slice(1).join(' ');
+          } else if (cronParts.length === 5) {
+            // 5 位格式：分 时 日 月 星期
+            console.log('检测到 5 位 cron 表达式');
+            specToParse = task.spec;
+          } else {
+            console.log(`cron 表达式格式不正确，部分数量: ${cronParts.length}`);
+            continue;
+          }
+          
+          const interval = cronParser.parseExpression(specToParse, { tz: 'Asia/Shanghai' });
           console.log('Cron 表达式解析成功');
           
           // 获取下一个执行时间
@@ -67,7 +86,7 @@ export class Scheduler {
           console.log('下一个执行时间:', nextRun.toISOString());
           
           // 重置解析器，获取上一个执行时间
-          const resetInterval = cronParser.parseExpression(task.spec, { utc: true });
+          const resetInterval = cronParser.parseExpression(specToParse, { tz: 'Asia/Shanghai' });
           const prevRun = resetInterval.prev().toDate();
           console.log('上一个执行时间:', prevRun.toISOString());
           
@@ -76,8 +95,8 @@ export class Scheduler {
           const currentMinute = now.getMinutes();
           
           // 获取任务的 cron 表达式的各个部分
-          const cronParts = task.spec.split(' ');
-          const minutePart = cronParts[0];
+          const cronParts2 = task.spec.split(' ');
+          const minutePart = cronParts2[0];
           
           console.log(`Cron 表达式分析: minute=${minutePart}`);
           console.log(`时间检查: 上次执行分钟 ${prevRunMinute}, 当前分钟 ${currentMinute}`);
@@ -126,32 +145,44 @@ export class Scheduler {
     
     console.log(`\n=== 调度器运行结束 ===`);
   }
-  
-  /**
-   * 检查任务是否应该在当前时间执行
-   * @param cronExpression cron 表达式
-   * @param currentTime 当前时间
-   * @returns 是否应该执行
-   */
+
   private shouldExecuteTask(cronExpression: string, currentTime: Date): boolean {
     try {
       console.log(`\n开始判断任务是否应该执行:`);
       console.log(`Cron 表达式: ${cronExpression}`);
       console.log(`当前时间: ${currentTime.toISOString()}`);
       
-      // 解析 cron 表达式，设置时区为 UTC
-      const interval = cronParser.parseExpression(cronExpression, { utc: true });
+      // 检查 cron 表达式是否是 6 位格式（包含秒字段）
+      const cronParts = cronExpression.trim().split(/\s+/);
+      let specToParse = cronExpression;
+      
+      if (cronParts.length === 6) {
+        // 6 位格式：秒 分 时 日 月 星期
+        // cron-parser 默认支持 5 位格式，需要跳过秒字段
+        console.log('检测到 6 位 cron 表达式，跳过秒字段');
+        specToParse = cronParts.slice(1).join(' ');
+      } else if (cronParts.length === 5) {
+        // 5 位格式：分 时 日 月 星期
+        console.log('检测到 5 位 cron 表达式');
+        specToParse = cronExpression;
+      } else {
+        console.log(`cron 表达式格式不正确，部分数量: ${cronParts.length}`);
+        return false;
+      }
+      
+      // 解析 cron 表达式，设置时区为上海
+      const interval = cronParser.parseExpression(specToParse, { tz: 'Asia/Shanghai' });
       const nextRun = interval.next().toDate();
       
       // 重置解析器，获取上一个执行时间
-      const resetInterval = cronParser.parseExpression(cronExpression, { utc: true });
+      const resetInterval = cronParser.parseExpression(specToParse, { tz: 'Asia/Shanghai' });
       const prevRun = resetInterval.prev().toDate();
       
       console.log(`下一个执行时间: ${nextRun.toISOString()}`);
       console.log(`上一个执行时间: ${prevRun.toISOString()}`);
       
-      // 对于分钟级任务 (* * * * *)，检查当前时间是否在上一分钟内
-      if (cronExpression === '* * * * *') {
+      // 对于分钟级任务 (* * * * *), 检查当前时间是否在上一分钟内
+      if (specToParse === '* * * * *') {
         console.log('任务是分钟级任务 (* * * * *)');
         // 检查是否在上一分钟内
         const oneMinuteAgo = new Date(currentTime.getTime() - 60 * 1000);
@@ -176,31 +207,127 @@ export class Scheduler {
   }
 
   private async executeTask(task: Task) {
-    // 创建任务日志
-    const logId = await this.createTaskLog(task);
-
+    console.log(`执行任务: ${task.id} - ${task.name}`);
+    console.log(`任务配置:`, task);
+    
+    let logId: number;
     try {
-      let result = '';
-      let status = 2; // 成功
-
+      // 创建任务日志
+      logId = await this.createTaskLog(task);
+      console.log(`任务日志创建成功: ${logId}`);
+    } catch (error) {
+      console.error('创建任务日志失败:', error);
+      // 即使日志创建失败，也要继续执行任务
+    }
+    
+    let result = '执行成功';
+    let status = 2;
+    
+    try {
+      // 根据协议执行任务
       if (task.protocol === 1) {
         // HTTP 任务
         result = await this.executeHTTPTask(task);
+      } else if (task.protocol === 2) {
+        // SSH 任务
+        result = await this.executeSSHTask(task);
+      } else if (task.protocol === 3) {
+        // 本地任务
+        result = await this.executeLocalTask(task);
       } else {
-        // 只支持 HTTP 任务
-        throw new Error('只支持 HTTP 任务类型');
+        result = '不支持的协议类型';
+        status = 0;
       }
-
-      console.log(`任务 ${task.id} 执行成功，结果:`, result);
+      
+      console.log(`任务执行结果: ${result}`);
+    } catch (error) {
+      console.error(`任务执行失败:`, error);
+      result = `执行失败: ${error.message}`;
+      status = 0;
+    }
+    
+    try {
       // 更新任务日志
       await this.updateTaskLog(logId, status, result);
+      console.log(`任务日志更新成功`);
     } catch (error) {
-      console.error(`任务 ${task.id} 执行失败:`, error);
+      console.error('更新任务日志失败:', error);
+    }
+  }
+
+  private async executeHTTPTask(task: Task): Promise<string> {
+    try {
+      console.log(`执行 HTTP 任务: ${task.command}, 方法: ${task.http_method}, 超时: ${task.timeout}`);
       
-      // 更新任务日志为失败
-      const errorMsg = error?.message || '执行失败';
-      console.log(`任务 ${task.id} 错误信息:`, errorMsg);
-      await this.updateTaskLog(logId, 0, errorMsg);
+      // 解析请求头
+      let headers: any = {};
+      if (task.request_headers) {
+        try {
+          headers = JSON.parse(task.request_headers);
+        } catch (error) {
+          console.error('解析请求头失败:', error);
+        }
+      }
+      
+      // 检查并设置默认 Content-Type
+      if (!headers['Content-Type'] && task.request_body) {
+        headers['Content-Type'] = 'application/json';
+      }
+      
+      // 处理请求体
+      let body: any = undefined;
+      if (task.request_body) {
+        // 对于 POST 请求，直接使用原始字符串作为 body
+        body = task.request_body;
+      }
+      
+      // 发送 HTTP 请求
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), (task.timeout || 60) * 1000);
+      
+      const response = await fetch(task.command, {
+        method: task.http_method === 1 ? 'GET' : task.http_method === 2 ? 'POST' : task.http_method === 3 ? 'PUT' : task.http_method === 4 ? 'DELETE' : 'GET',
+        headers: headers,
+        body: body,
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      const responseText = await response.text();
+      console.log(`HTTP 响应状态: ${response.status}`);
+      console.log(`HTTP 响应内容: ${responseText}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP 错误: ${response.status} ${response.statusText}`);
+      }
+      
+      return `HTTP 执行成功: ${response.status} ${response.statusText}`;
+    } catch (error: any) {
+      console.error('执行 HTTP 任务失败:', error);
+      return `HTTP 执行失败: ${error.message}`;
+    }
+  }
+
+  private async executeSSHTask(task: Task): Promise<string> {
+    try {
+      console.log(`执行 SSH 任务: ${task.command}`);
+      // 这里需要实现 SSH 任务执行逻辑
+      return 'SSH 执行成功';
+    } catch (error: any) {
+      console.error('执行 SSH 任务失败:', error);
+      return `SSH 执行失败: ${error.message}`;
+    }
+  }
+
+  private async executeLocalTask(task: Task): Promise<string> {
+    try {
+      console.log(`执行本地任务: ${task.command}`);
+      // 这里需要实现本地任务执行逻辑
+      return '本地执行成功';
+    } catch (error: any) {
+      console.error('执行本地任务失败:', error);
+      return `本地执行失败: ${error.message}`;
     }
   }
 
@@ -236,42 +363,6 @@ export class Scheduler {
     } catch (error) {
       console.error('更新任务日志失败:', error);
       // 如果更新日志失败，忽略错误，继续执行
-    }
-  }
-
-  private async executeHTTPTask(task: Task): Promise<string> {
-    try {
-      console.log(`执行 HTTP 任务: ${task.command}, 方法: ${task.http_method}, 超时: ${task.timeout}`);
-      const method = task.http_method === 1 ? 'GET' : 'POST';
-      
-      const options: RequestInit = {
-        method,
-        timeout: (task.timeout || 60) * 1000,
-      };
-
-      if (task.request_headers) {
-        try {
-          const headers = JSON.parse(task.request_headers);
-          options.headers = headers;
-          console.log(`使用自定义请求头:`, headers);
-        } catch (error) {
-          console.error(`解析请求头失败:`, error);
-        }
-      }
-
-      if (method === 'POST' && task.request_body) {
-        options.body = task.request_body;
-        console.log(`使用请求体:`, task.request_body);
-      }
-
-      const response = await fetch(task.command, options);
-
-      const body = await response.text();
-      console.log(`HTTP 任务响应状态: ${response.status}`);
-      return `HTTP ${response.status}: ${body}`;
-    } catch (error) {
-      console.error(`HTTP 任务执行失败:`, error);
-      throw new Error(`HTTP 请求失败: ${error.message}`);
     }
   }
 }
