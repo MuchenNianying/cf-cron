@@ -98,3 +98,14 @@ INSERT OR IGNORE INTO users (name, password, salt, email, is_admin, status) VALU
 -- 插入默认设置
 INSERT OR IGNORE INTO settings (key, value) VALUES ('app_name', 'CF-Cron');
 INSERT OR IGNORE INTO settings (key, value) VALUES ('app_version', '1.0.0');
+
+-- 创建登录日志表
+CREATE TABLE IF NOT EXISTS login_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT NOT NULL,
+  ip TEXT NOT NULL,
+  login_time DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 创建登录日志表索引
+CREATE INDEX IF NOT EXISTS idx_login_logs_login_time ON login_logs(login_time);

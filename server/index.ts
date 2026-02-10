@@ -5,6 +5,7 @@ import taskRoutes from './routes/tasks';
 import taskLogRoutes from './routes/task_logs';
 import settingRoutes from './routes/settings';
 import userRoutes from './routes/users';
+import logsRoutes from './routes/logs';
 import { Scheduler } from './services/scheduler';
 
 const app = new Hono();
@@ -211,6 +212,9 @@ protectedRoutes.route('/tasks', taskRoutes);
 
 // 任务日志路由（所有认证用户都可以访问）
 protectedRoutes.route('/task-logs', taskLogRoutes);
+
+// 登录日志路由（所有认证用户都可以访问）
+protectedRoutes.route('/logs', logsRoutes);
 
 // 系统设置路由（仅管理员可以访问）
 adminRoutes.route('/settings', settingRoutes);

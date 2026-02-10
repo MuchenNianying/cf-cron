@@ -79,6 +79,26 @@ app.post('/login', async (c) => {
       c.env.SECRET_KEY
     );
     
+    // 记录登录日志
+    // 尝试多种方式获取客户端IP
+    const clientIP = c.req.header('x-forwarded-for') || 
+                    c.req.header('cf-connecting-ip') || 
+                    c.req.header('remote-addr') || 
+                    c.req.header('x-real-ip') || 
+                    c.env.CF_CONNECTING_IP || 
+                    'unknown';
+    
+    console.log('登录日志记录:', { username: user.name, ip: clientIP });
+    
+    try {
+      await c.env.DB.prepare(
+        'INSERT INTO login_logs (username, ip, login_time) VALUES (?, ?, ?)'
+      ).bind(user.name, clientIP, new Date().toISOString()).run();
+      console.log('登录日志记录成功');
+    } catch (error) {
+      console.error('登录日志记录失败:', error);
+    }
+    
     // 返回 token 和用户信息
     return c.json({
       token,

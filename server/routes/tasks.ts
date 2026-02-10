@@ -223,8 +223,8 @@ app.delete('/:id', requireAdmin, async (c) => {
   return c.json({ message: '删除任务成功' });
 });
 
-// 启用任务（仅管理员可以访问）
-app.post('/:id/enable', requireAdmin, async (c) => {
+// 启用任务（所有认证用户都可以访问）
+app.post('/:id/enable', async (c) => {
   const id = c.req.param('id');
   
   const result = await c.env.DB.prepare('UPDATE tasks SET status = 1 WHERE id = ?').bind(id).run();  
@@ -235,8 +235,8 @@ app.post('/:id/enable', requireAdmin, async (c) => {
   return c.json({ message: '启用任务成功' });
 });
 
-// 禁用任务（仅管理员可以访问）
-app.post('/:id/disable', requireAdmin, async (c) => {
+// 禁用任务（所有认证用户都可以访问）
+app.post('/:id/disable', async (c) => {
   const id = c.req.param('id');
   
   const result = await c.env.DB.prepare('UPDATE tasks SET status = 0 WHERE id = ?').bind(id).run();  
