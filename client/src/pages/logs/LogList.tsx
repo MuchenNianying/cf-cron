@@ -211,8 +211,8 @@ const LogList = () => {
 
   return (
     <Card>
-      <Form layout="inline" style={{ marginBottom: '16px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <Form.Item label="任务名称">
+      <Form layout="inline" style={{ marginBottom: '16px', flexWrap: 'wrap', alignItems: 'flex-end', width: '100%' }}>
+        <Form.Item label="任务名称" style={{ marginRight: '8px', marginBottom: '8px' }}>
           <Input
             placeholder="请输入任务名称"
             value={searchTask}
@@ -221,7 +221,7 @@ const LogList = () => {
             style={{ width: 200 }}
           />
         </Form.Item>
-        <Form.Item label="状态">
+        <Form.Item label="状态" style={{ marginRight: '8px', marginBottom: '8px' }}>
           <Select
             placeholder="请选择状态"
             value={searchStatus}
@@ -234,7 +234,7 @@ const LogList = () => {
             <Select.Option value="0">失败</Select.Option>
           </Select>
         </Form.Item>
-        <Form.Item>
+        <Form.Item style={{ marginBottom: '8px' }}>
           <Space>
             <Button type="primary" onClick={handleSearch}>
               搜索

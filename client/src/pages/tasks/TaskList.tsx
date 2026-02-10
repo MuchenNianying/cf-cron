@@ -291,8 +291,8 @@ const TaskList = () => {
 
   return (
     <Card>
-      <Form layout="inline" style={{ marginBottom: '16px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <Form.Item label="任务名称">
+      <Form layout="inline" style={{ marginBottom: '16px', flexWrap: 'wrap', alignItems: 'flex-end', width: '100%' }}>
+        <Form.Item label="任务名称" style={{ marginRight: '8px', marginBottom: '8px' }}>
           <Input
             placeholder="请输入任务名称"
             value={searchName}
@@ -301,7 +301,7 @@ const TaskList = () => {
             style={{ width: 200 }}
           />
         </Form.Item>
-        <Form.Item label="标签">
+        <Form.Item label="标签" style={{ marginRight: '8px', marginBottom: '8px' }}>
           <Input
             placeholder="请输入标签"
             value={searchTag}
@@ -309,7 +309,7 @@ const TaskList = () => {
             style={{ width: 150 }}
           />
         </Form.Item>
-        <Form.Item>
+        <Form.Item style={{ marginBottom: '8px' }}>
           <Space>
             <Button type="primary" onClick={handleSearch}>
               搜索

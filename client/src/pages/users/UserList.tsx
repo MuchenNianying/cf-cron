@@ -224,8 +224,8 @@ const UserList = () => {
 
   return (
     <Card>
-      <Form layout="inline" style={{ marginBottom: '16px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <Form.Item label="用户名">
+      <Form layout="inline" style={{ marginBottom: '16px', flexWrap: 'wrap', alignItems: 'flex-end', width: '100%' }}>
+        <Form.Item label="用户名" style={{ marginRight: '8px', marginBottom: '8px' }}>
           <Input
             placeholder="请输入用户名"
             value={searchName}
@@ -234,7 +234,7 @@ const UserList = () => {
             style={{ width: 200 }}
           />
         </Form.Item>
-        <Form.Item label="邮箱">
+        <Form.Item label="邮箱" style={{ marginRight: '8px', marginBottom: '8px' }}>
           <Input
             placeholder="请输入邮箱"
             value={searchEmail}
@@ -243,7 +243,7 @@ const UserList = () => {
             style={{ width: 200 }}
           />
         </Form.Item>
-        <Form.Item label="状态">
+        <Form.Item label="状态" style={{ marginRight: '8px', marginBottom: '8px' }}>
           <Select
             placeholder="请选择状态"
             value={searchStatus}
@@ -255,7 +255,7 @@ const UserList = () => {
             <Select.Option value="0">禁用</Select.Option>
           </Select>
         </Form.Item>
-        <Form.Item>
+        <Form.Item style={{ marginBottom: '8px' }}>
           <Space>
             <Button type="primary" onClick={handleSearch}>
               搜索
