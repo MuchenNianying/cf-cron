@@ -49,7 +49,7 @@ const verifyToken = async (token: string, secret: string): Promise<any> => {
       throw new Error('Invalid signature');
     }
     
-    // 解析 payload
+    // 解码 payload
     const payload = JSON.parse(atob(encodedPayload));
     
     // 验证过期时间
@@ -205,21 +205,42 @@ adminRoutes.route('/users', userRoutes);
 app.route('/api', protectedRoutes);
 app.route('/api', adminRoutes);
 
-// Cron Trigger 处理函数
-export async function scheduled(event: any, env: any, ctx: any) {
-  console.log('=== 定时任务触发事件 ===');
-  console.log('事件信息:', event);
-  try {
-    console.log('开始执行定时任务调度器...');
-    
-    // 使用 Scheduler 类执行调度逻辑
-    const scheduler = new Scheduler({ DB: env.DB });
-    await scheduler.run();
-    
-    console.log('定时任务调度器执行成功');
-  } catch (error) {
-    console.error('定时任务调度器执行失败:', error);
-  }
-}
+// 导出默认对象，包含 fetch 和 scheduled 方法
+export default {
+  async fetch(request: Request, env: any, ctx: any) {
+    return app.fetch(request, env, ctx);
+  },
 
-export default app;
+  async scheduled(event: any, env: any, ctx: any) {
+    console.log('=== 定时任务触发事件 ===');
+    console.log('事件信息:', event);
+    try {
+      console.log('开始执行定时任务调度器...');
+      
+      // 检查必要的环境变量
+      if (!env.DB) {
+        console.error('数据库连接失败: env.DB 未定义');
+        return;
+      }
+      
+      if (!env.SECRET_KEY) {
+        console.warn('SECRET_KEY 未定义，使用默认值');
+        env.SECRET_KEY = 'default_secret';
+      }
+      
+      console.log('环境变量检查通过');
+      
+      // 使用 Scheduler 类执行调度逻辑
+      const scheduler = new Scheduler(env);
+      await scheduler.run();
+      
+      console.log('定时任务调度器执行成功');
+    } catch (error) {
+      console.error('定时任务调度器执行失败:', error);
+      if (error instanceof Error) {
+        console.error('错误信息:', error.message);
+        console.error('错误堆栈:', error.stack);
+      }
+    }
+  },
+};
