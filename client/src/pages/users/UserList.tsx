@@ -89,7 +89,7 @@ const UserList = () => {
       username: user.name || user.username, // 后端返回name，前端使用username
       nickname: user.nickname || user.name, // 后端没有nickname，使用name作为默认值
       email: user.email, // 保持不变
-      role: user.is_admin === 1 ? 'admin' : 'user', // 后端返回is_admin，前端使用role
+      role: user.role || (user.is_admin === 1 ? 'admin' : 'user'), // 优先使用user.role，兼容旧数据结构
       status: user.status, // 保持不变
     };
     form.setFieldsValue(formValues);
@@ -231,15 +231,17 @@ const UserList = () => {
           >
             编辑
           </Button>
-          <Button
-            type="default"
-            danger
-            size="small"
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record.id)}
-          >
-            删除
-          </Button>
+          {record.username !== 'admin' && record.name !== 'admin' && (
+            <Button
+              type="default"
+              danger
+              size="small"
+              icon={<DeleteOutlined />}
+              onClick={() => handleDelete(record.id)}
+            >
+              删除
+            </Button>
+          )}
         </Space>
       ),
     },
@@ -390,7 +392,10 @@ const UserList = () => {
             name="role"
             label="角色"
           >
-            <Select placeholder="请选择角色">
+            <Select 
+              placeholder="请选择角色"
+              disabled={editingUser?.username === 'admin' || editingUser?.name === 'admin'}
+            >
               <Select.Option value="admin">管理员</Select.Option>
               <Select.Option value="user">普通用户</Select.Option>
             </Select>
@@ -400,7 +405,10 @@ const UserList = () => {
             name="status"
             label="状态"
           >
-            <Select placeholder="请选择状态">
+            <Select 
+              placeholder="请选择状态"
+              disabled={editingUser?.username === 'admin' || editingUser?.name === 'admin'}
+            >
               <Select.Option value={1}>启用</Select.Option>
               <Select.Option value={0}>禁用</Select.Option>
             </Select>
