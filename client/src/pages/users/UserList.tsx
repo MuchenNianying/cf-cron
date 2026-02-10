@@ -7,7 +7,6 @@ import type { ColumnsType } from 'antd/es/table';
 interface User {
   id: number;
   username: string;
-  nickname: string;
   email: string;
   role: string;
   status: number;
@@ -38,7 +37,6 @@ const UserList = () => {
       const usersData = (data.users || []).map((user: any) => ({
         id: user.id,
         username: user.name, // 后端返回name，前端使用username
-        nickname: user.name, // 后端没有nickname，使用name作为默认值
         email: user.email,
         role: user.is_admin === 1 ? 'admin' : 'user', // 后端返回is_admin，前端使用role
         status: user.status,
@@ -86,10 +84,9 @@ const UserList = () => {
     setEditingUser(user);
     // 转换后端返回的字段为前端表单字段
     const formValues = {
-      username: user.name || user.username, // 后端返回name，前端使用username
-      nickname: user.nickname || user.name, // 后端没有nickname，使用name作为默认值
+      username: user.name, // 后端返回name，前端使用username
       email: user.email, // 保持不变
-      role: user.role || (user.is_admin === 1 ? 'admin' : 'user'), // 优先使用user.role，兼容旧数据结构
+      role: user.is_admin === 1 ? 'admin' : 'user', // 后端返回is_admin，前端使用role
       status: user.status, // 保持不变
     };
     form.setFieldsValue(formValues);
@@ -365,14 +362,6 @@ const UserList = () => {
           </Form.Item>
 
           <Form.Item
-            name="nickname"
-            label="昵称"
-            rules={[{ required: true, message: '请输入昵称' }]}
-          >
-            <Input placeholder="请输入昵称" />
-          </Form.Item>
-
-          <Form.Item
             name="password"
             label="密码"
             rules={!editingUser ? [{ required: true, message: '请输入密码' }] : []}
@@ -432,7 +421,6 @@ const UserList = () => {
           <div style={{ lineHeight: '2.5' }}>
             <p><strong>ID：</strong>{selectedUser.id}</p>
             <p><strong>用户名：</strong>{selectedUser.name || selectedUser.username}</p>
-            <p><strong>昵称：</strong>{selectedUser.nickname || selectedUser.name}</p>
             <p><strong>邮箱：</strong>{selectedUser.email}</p>
             <p><strong>角色：</strong>{selectedUser.is_admin === 1 ? '管理员' : '普通用户'}</p>
             <p><strong>状态：</strong>{selectedUser.status === 1 ? '启用' : '禁用'}</p>
