@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Table, Button, Form, Input, message, Space, Card, Modal, Select } from 'antd';
-import { ReloadOutlined, PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
+import { ReloadOutlined, PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined, EyeOutlined } from '@ant-design/icons';
 import { apiRequest } from '../../config/api';
 import type { ColumnsType } from 'antd/es/table';
 
@@ -19,6 +19,8 @@ const UserList = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [viewModalVisible, setViewModalVisible] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -84,6 +86,11 @@ const UserList = () => {
     };
     form.setFieldsValue(formValues);
     setIsModalVisible(true);
+  };
+
+  const handleView = (user: any) => {
+    setSelectedUser(user);
+    setViewModalVisible(true);
   };
 
   const handleDelete = async (id: number) => {
@@ -200,6 +207,14 @@ const UserList = () => {
       width: 150,
       render: (_: any, record: User) => (
         <Space size="small">
+          <Button
+            type="default"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => handleView(record)}
+          >
+            查看
+          </Button>
           <Button
             type="default"
             size="small"
@@ -380,6 +395,32 @@ const UserList = () => {
             </Select>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* 查看用户信息对话框 */}
+      <Modal
+        title="查看用户信息"
+        open={viewModalVisible}
+        onCancel={() => setViewModalVisible(false)}
+        footer={[
+          <Button key="ok" type="primary" onClick={() => setViewModalVisible(false)}>
+            确定
+          </Button>,
+        ]}
+        width={500}
+      >
+        {selectedUser && (
+          <div style={{ lineHeight: '2.5' }}>
+            <p><strong>ID：</strong>{selectedUser.id}</p>
+            <p><strong>用户名：</strong>{selectedUser.name || selectedUser.username}</p>
+            <p><strong>昵称：</strong>{selectedUser.nickname || selectedUser.name}</p>
+            <p><strong>邮箱：</strong>{selectedUser.email}</p>
+            <p><strong>角色：</strong>{selectedUser.is_admin === 1 ? '管理员' : '普通用户'}</p>
+            <p><strong>状态：</strong>{selectedUser.status === 1 ? '启用' : '禁用'}</p>
+            <p><strong>创建时间：</strong>{selectedUser.created_at ? new Date(selectedUser.created_at).toLocaleString('zh-CN') : '-'}</p>
+            <p><strong>更新时间：</strong>{selectedUser.updated_at ? new Date(selectedUser.updated_at).toLocaleString('zh-CN') : '-'}</p>
+          </div>
+        )}
       </Modal>
     </>
   );

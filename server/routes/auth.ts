@@ -55,11 +55,16 @@ app.post('/login', async (c) => {
     
     // 从数据库中查询用户
     const user = await c.env.DB.prepare(
-      'SELECT id, name, password, salt, email, is_admin FROM users WHERE name = ? OR email = ?'
+      'SELECT id, name, password, salt, email, is_admin, status FROM users WHERE name = ? OR email = ?'
     ).bind(username, username).first();
     
     if (!user) {
       return c.json({ error: '用户名或密码错误' }, 401);
+    }
+    
+    // 验证用户是否被禁用
+    if (user.status !== 1) {
+      return c.json({ error: '用户已被禁用' }, 401);
     }
     
     // 验证密码

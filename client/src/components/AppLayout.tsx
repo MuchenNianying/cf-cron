@@ -9,6 +9,7 @@ import {
   EditOutlined
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { apiRequest } from './../config/api';
 
 const { Header, Content, Sider } = Layout;
 
@@ -18,6 +19,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [passwordModalVisible, setPasswordModalVisible] = useState(false);
+  const [userInfoModalVisible, setUserInfoModalVisible] = useState(false);
   const [passwordForm] = Form.useForm();
   const [passwordLoading, setPasswordLoading] = useState(false);
 
@@ -42,27 +44,15 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const handleChangePassword = async (values: any) => {
     setPasswordLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/users/change-password', {
+      await apiRequest('users/change-password', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(values),
       });
-
-      const data = await response.json();
-      
-      if (response.ok) {
-        message.success('密码修改成功');
-        setPasswordModalVisible(false);
-        passwordForm.resetFields();
-      } else {
-        message.error(data.error || '密码修改失败');
-      }
-    } catch (err) {
-      message.error('网络错误，请稍后重试');
+      message.success('密码修改成功');
+      setPasswordModalVisible(false);
+      passwordForm.resetFields();
+    } catch (err: any) {
+      message.error(err.message || '密码修改失败');
     } finally {
       setPasswordLoading(false);
     }
@@ -94,6 +84,12 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   ];
 
   const userMenuItems = [
+    {
+      key: 'user-info',
+      icon: <UserOutlined />,
+      label: '用户信息',
+      onClick: () => setUserInfoModalVisible(true),
+    },
     {
       key: 'change-password',
       icon: <EditOutlined />,
@@ -182,7 +178,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
                     }} 
                   />
                   <span style={{ fontSize: '14px', fontWeight: '500' }}>
-                    {user?.name || '用户'}
+                    {user?.username || '用户'}
                   </span>
                 </div>
               </Dropdown>
@@ -252,6 +248,27 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* 用户信息对话框 */}
+      <Modal
+        title="用户信息"
+        open={userInfoModalVisible}
+        onCancel={() => setUserInfoModalVisible(false)}
+        footer={[
+          <Button key="ok" type="primary" onClick={() => setUserInfoModalVisible(false)}>
+            确定
+          </Button>,
+        ]}
+        width={400}
+      >
+        {user && (
+          <div style={{ lineHeight: '2.5' }}>
+            <p><strong>用户名：</strong>{user.username}</p>
+            <p><strong>邮箱：</strong>{user.email}</p>
+            <p><strong>角色：</strong>{user.is_admin ? '管理员' : '普通用户'}</p>
+          </div>
+        )}
       </Modal>
     </>
   );

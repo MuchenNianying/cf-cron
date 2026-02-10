@@ -115,11 +115,11 @@ app.put('/:id', async (c) => {
     const hashedPassword = await generateHash(password, salt);
     result = await c.env.DB.prepare(
       'UPDATE users SET name = ?, password = ?, salt = ?, email = ?, is_admin = ?, status = ?, updated = CURRENT_TIMESTAMP WHERE id = ?'
-    ).bind(name, hashedPassword, salt, email || '', is_admin || 0, status || 1, id).run();
+    ).bind(name, hashedPassword, salt, email || '', is_admin || 0, status, id).run();
   } else {
     result = await c.env.DB.prepare(
       'UPDATE users SET name = ?, email = ?, is_admin = ?, status = ?, updated = CURRENT_TIMESTAMP WHERE id = ?'
-    ).bind(name, email || '', is_admin || 0, status || 1, id).run();
+    ).bind(name, email || '', is_admin || 0, status, id).run();
   }
   
   if (!result.success) {
