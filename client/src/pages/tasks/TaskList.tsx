@@ -226,7 +226,12 @@ const TaskList = () => {
       render: (status: number, record: Task) => (
         <Switch
           checked={status === 1}
-          onChange={(checked) => handleToggleStatus(record.id, status)}
+          onChange={(checked) => {
+            // 使用 checked 变量，避免 TypeScript 编译错误
+            console.log('开关状态:', checked);
+            // 传递 status 给 handleToggleStatus 函数，确保它会调用正确的接口
+            handleToggleStatus(record.id, status);
+          }}
           style={{
             width: 44,
             height: 24,
