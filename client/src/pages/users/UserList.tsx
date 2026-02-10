@@ -84,9 +84,9 @@ const UserList = () => {
     setEditingUser(user);
     // 转换后端返回的字段为前端表单字段
     const formValues = {
-      username: user.name, // 后端返回name，前端使用username
+      username: user.username, // 前端使用username
       email: user.email, // 保持不变
-      role: user.is_admin === 1 ? 'admin' : 'user', // 后端返回is_admin，前端使用role
+      role: user.role, // 前端使用role
       status: user.status, // 保持不变
     };
     form.setFieldsValue(formValues);
