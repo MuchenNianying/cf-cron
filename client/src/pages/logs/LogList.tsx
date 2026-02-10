@@ -210,8 +210,8 @@ const LogList = () => {
   };
 
   return (
-    <Card>
-      <div style={{ marginBottom: '16px', width: '100%' }}>
+    <>
+      <Card style={{ marginBottom: '16px' }}>
         <Form layout="inline" style={{ flexWrap: 'wrap', alignItems: 'flex-end', width: '100%' }}>
           <Form.Item label="任务名称" style={{ marginRight: '8px', marginBottom: '8px' }}>
             <Input
@@ -255,60 +255,62 @@ const LogList = () => {
             </Space>
           </Form.Item>
         </Form>
-      </div>
+      </Card>
 
-      <Table
-        columns={columns}
-        dataSource={logs}
-        rowKey="id"
-        loading={loading}
-        rowSelection={{
-          selectedRowKeys,
-          onChange: setSelectedRowKeys,
-        }}
-        pagination={{
-          current: page,
-          pageSize: pageSize,
-          total: total,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
-          onChange: (newPage) => setPage(newPage),
-          onShowSizeChange: (_, size) => {
-            setPageSize(size);
-            setPage(1);
-          },
-          locale: {
-            items_per_page: '条/页',
-            jump_to: '跳至',
-            page: '页',
-            prev_page: '上一页',
-            next_page: '下一页',
-          },
-        }}
-        bordered
-        expandable={{
-          expandedRowRender: (record: TaskLog) => (
-            <div style={{ padding: '16px', backgroundColor: '#f5f5f5' }}>
-              <div style={{ marginBottom: '8px' }}>
-                <strong>重试次数:</strong> {record.retry_times}
+      <Card style={{ height: 'calc(100vh - 280px)', overflow: 'auto' }}>
+        <Table
+          columns={columns}
+          dataSource={logs}
+          rowKey="id"
+          loading={loading}
+          rowSelection={{
+            selectedRowKeys,
+            onChange: setSelectedRowKeys,
+          }}
+          pagination={{
+            current: page,
+            pageSize: pageSize,
+            total: total,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total) => `共 ${total} 条`,
+            onChange: (newPage) => setPage(newPage),
+            onShowSizeChange: (_, size) => {
+              setPageSize(size);
+              setPage(1);
+            },
+            locale: {
+              items_per_page: '条/页',
+              jump_to: '跳至',
+              page: '页',
+              prev_page: '上一页',
+              next_page: '下一页',
+            },
+          }}
+          bordered
+          expandable={{
+            expandedRowRender: (record: TaskLog) => (
+              <div style={{ padding: '16px', backgroundColor: '#f5f5f5' }}>
+                <div style={{ marginBottom: '8px' }}>
+                  <strong>重试次数:</strong> {record.retry_times}
+                </div>
+                <div style={{ marginBottom: '8px' }}>
+                  <strong>cron表达式:</strong> {record.spec}
+                </div>
+                <div style={{ marginBottom: '8px' }}>
+                  <strong>命令:</strong> {record.command}
+                </div>
+                <div style={{ marginBottom: '8px' }}>
+                  <strong>协议:</strong> {record.protocol === 1 ? 'HTTP' : '其他'}
+                </div>
+                <div style={{ marginBottom: '8px' }}>
+                  <strong>主机名:</strong> {record.hostname}
+                </div>
               </div>
-              <div style={{ marginBottom: '8px' }}>
-                <strong>cron表达式:</strong> {record.spec}
-              </div>
-              <div style={{ marginBottom: '8px' }}>
-                <strong>命令:</strong> {record.command}
-              </div>
-              <div style={{ marginBottom: '8px' }}>
-                <strong>协议:</strong> {record.protocol === 1 ? 'HTTP' : '其他'}
-              </div>
-              <div style={{ marginBottom: '8px' }}>
-                <strong>主机名:</strong> {record.hostname}
-              </div>
-            </div>
-          ),
-        }}
-      />
+            ),
+          }}
+        />
+      </Card>
 
       <Modal
         title="任务执行结果"
@@ -347,7 +349,7 @@ const LogList = () => {
         </div>
       </Modal>
 
-    </Card>
+    </>
   );
 };
 

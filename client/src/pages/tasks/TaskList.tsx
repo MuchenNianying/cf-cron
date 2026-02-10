@@ -290,8 +290,8 @@ const TaskList = () => {
   };
 
   return (
-    <Card>
-      <div style={{ marginBottom: '16px', width: '100%' }}>
+    <>
+      <Card style={{ marginBottom: '16px' }}>
         <Form layout="inline" style={{ flexWrap: 'wrap', alignItems: 'flex-end', width: '100%' }}>
           <Form.Item label="任务名称" style={{ marginRight: '8px', marginBottom: '8px' }}>
             <Input
@@ -326,36 +326,38 @@ const TaskList = () => {
             </Space>
           </Form.Item>
         </Form>
-      </div>
+      </Card>
 
-      <Table
-        columns={columns}
-        dataSource={tasks}
-        rowKey="id"
-        loading={loading}
-        pagination={{
-          current: page,
-          pageSize: pageSize,
-          total: total,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
-          onChange: (newPage) => setPage(newPage),
-          onShowSizeChange: (_, size) => {
-            setPageSize(size);
-            setPage(1);
-          },
-          locale: {
-            items_per_page: '条/页',
-            jump_to: '跳至',
-            page: '页',
-            prev_page: '上一页',
-            next_page: '下一页',
-          },
-        }}
-        bordered
-      />
-    </Card>
+      <Card style={{ height: 'calc(100vh - 280px)', overflow: 'auto' }}>
+        <Table
+          columns={columns}
+          dataSource={tasks}
+          rowKey="id"
+          loading={loading}
+          pagination={{
+            current: page,
+            pageSize: pageSize,
+            total: total,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total) => `共 ${total} 条`,
+            onChange: (newPage) => setPage(newPage),
+            onShowSizeChange: (_, size) => {
+              setPageSize(size);
+              setPage(1);
+            },
+            locale: {
+              items_per_page: '条/页',
+              jump_to: '跳至',
+              page: '页',
+              prev_page: '上一页',
+              next_page: '下一页',
+            },
+          }}
+          bordered
+        />
+      </Card>
+    </>
   );
 };
 
