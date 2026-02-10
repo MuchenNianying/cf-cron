@@ -165,12 +165,6 @@ const UserList = () => {
       width: 120,
     },
     {
-      title: '昵称',
-      dataIndex: 'nickname',
-      key: 'nickname',
-      width: 120,
-    },
-    {
       title: '邮箱',
       dataIndex: 'email',
       key: 'email',
@@ -228,7 +222,7 @@ const UserList = () => {
           >
             编辑
           </Button>
-          {record.username !== 'admin' && record.name !== 'admin' && (
+          {record.username !== 'admin' && (
             <Button
               type="default"
               danger
@@ -383,7 +377,7 @@ const UserList = () => {
           >
             <Select 
               placeholder="请选择角色"
-              disabled={editingUser?.username === 'admin' || editingUser?.name === 'admin'}
+              disabled={editingUser?.username === 'admin'}
             >
               <Select.Option value="admin">管理员</Select.Option>
               <Select.Option value="user">普通用户</Select.Option>
@@ -396,7 +390,7 @@ const UserList = () => {
           >
             <Select 
               placeholder="请选择状态"
-              disabled={editingUser?.username === 'admin' || editingUser?.name === 'admin'}
+              disabled={editingUser?.username === 'admin'}
             >
               <Select.Option value={1}>启用</Select.Option>
               <Select.Option value={0}>禁用</Select.Option>
@@ -420,9 +414,9 @@ const UserList = () => {
         {selectedUser && (
           <div style={{ lineHeight: '2.5' }}>
             <p><strong>ID：</strong>{selectedUser.id}</p>
-            <p><strong>用户名：</strong>{selectedUser.name || selectedUser.username}</p>
+            <p><strong>用户名：</strong>{selectedUser.username}</p>
             <p><strong>邮箱：</strong>{selectedUser.email}</p>
-            <p><strong>角色：</strong>{selectedUser.is_admin === 1 ? '管理员' : '普通用户'}</p>
+            <p><strong>角色：</strong>{selectedUser.role === 'admin' ? '管理员' : '普通用户'}</p>
             <p><strong>状态：</strong>{selectedUser.status === 1 ? '启用' : '禁用'}</p>
             <p><strong>创建时间：</strong>{selectedUser.created_at ? new Date(selectedUser.created_at).toLocaleString('zh-CN') : '-'}</p>
             <p><strong>更新时间：</strong>{selectedUser.updated_at ? new Date(selectedUser.updated_at).toLocaleString('zh-CN') : '-'}</p>
