@@ -291,40 +291,42 @@ const TaskList = () => {
 
   return (
     <Card>
-      <Form layout="inline" style={{ marginBottom: '16px', flexWrap: 'wrap', alignItems: 'flex-end', width: '100%' }}>
-        <Form.Item label="任务名称" style={{ marginRight: '8px', marginBottom: '8px' }}>
-          <Input
-            placeholder="请输入任务名称"
-            value={searchName}
-            onChange={(e) => setSearchName(e.target.value)}
-            prefix={<SearchOutlined />}
-            style={{ width: 200 }}
-          />
-        </Form.Item>
-        <Form.Item label="标签" style={{ marginRight: '8px', marginBottom: '8px' }}>
-          <Input
-            placeholder="请输入标签"
-            value={searchTag}
-            onChange={(e) => setSearchTag(e.target.value)}
-            style={{ width: 150 }}
-          />
-        </Form.Item>
-        <Form.Item style={{ marginBottom: '8px' }}>
-          <Space>
-            <Button type="primary" onClick={handleSearch}>
-              搜索
-            </Button>
-            <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
-              刷新
-            </Button>
-            {isAdmin && (
-              <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/tasks/create')}>
-                新增
+      <div style={{ marginBottom: '16px', width: '100%' }}>
+        <Form layout="inline" style={{ flexWrap: 'wrap', alignItems: 'flex-end', width: '100%' }}>
+          <Form.Item label="任务名称" style={{ marginRight: '8px', marginBottom: '8px' }}>
+            <Input
+              placeholder="请输入任务名称"
+              value={searchName}
+              onChange={(e) => setSearchName(e.target.value)}
+              prefix={<SearchOutlined />}
+              style={{ width: 200 }}
+            />
+          </Form.Item>
+          <Form.Item label="标签" style={{ marginRight: '8px', marginBottom: '8px' }}>
+            <Input
+              placeholder="请输入标签"
+              value={searchTag}
+              onChange={(e) => setSearchTag(e.target.value)}
+              style={{ width: 150 }}
+            />
+          </Form.Item>
+          <Form.Item style={{ marginBottom: '8px' }}>
+            <Space>
+              <Button type="primary" onClick={handleSearch}>
+                搜索
               </Button>
-            )}
-          </Space>
-        </Form.Item>
-      </Form>
+              <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
+                刷新
+              </Button>
+              {isAdmin && (
+                <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/tasks/create')}>
+                  新增
+                </Button>
+              )}
+            </Space>
+          </Form.Item>
+        </Form>
+      </div>
 
       <Table
         columns={columns}

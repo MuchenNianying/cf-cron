@@ -224,55 +224,57 @@ const UserList = () => {
 
   return (
     <Card>
-      <Form layout="inline" style={{ marginBottom: '16px', flexWrap: 'wrap', alignItems: 'flex-end', width: '100%' }}>
-        <Form.Item label="用户名" style={{ marginRight: '8px', marginBottom: '8px' }}>
-          <Input
-            placeholder="请输入用户名"
-            value={searchName}
-            onChange={(e) => setSearchName(e.target.value)}
-            prefix={<SearchOutlined />}
-            style={{ width: 200 }}
-          />
-        </Form.Item>
-        <Form.Item label="邮箱" style={{ marginRight: '8px', marginBottom: '8px' }}>
-          <Input
-            placeholder="请输入邮箱"
-            value={searchEmail}
-            onChange={(e) => setSearchEmail(e.target.value)}
-            prefix={<SearchOutlined />}
-            style={{ width: 200 }}
-          />
-        </Form.Item>
-        <Form.Item label="状态" style={{ marginRight: '8px', marginBottom: '8px' }}>
-          <Select
-            placeholder="请选择状态"
-            value={searchStatus}
-            onChange={(value) => setSearchStatus(value)}
-            style={{ width: 120 }}
-            allowClear
-          >
-            <Select.Option value="1">启用</Select.Option>
-            <Select.Option value="0">禁用</Select.Option>
-          </Select>
-        </Form.Item>
-        <Form.Item style={{ marginBottom: '8px' }}>
-          <Space>
-            <Button type="primary" onClick={handleSearch}>
-              搜索
-            </Button>
-            <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
-              刷新
-            </Button>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleCreate}
+      <div style={{ marginBottom: '16px', width: '100%' }}>
+        <Form layout="inline" style={{ flexWrap: 'wrap', alignItems: 'flex-end', width: '100%' }}>
+          <Form.Item label="用户名" style={{ marginRight: '8px', marginBottom: '8px' }}>
+            <Input
+              placeholder="请输入用户名"
+              value={searchName}
+              onChange={(e) => setSearchName(e.target.value)}
+              prefix={<SearchOutlined />}
+              style={{ width: 200 }}
+            />
+          </Form.Item>
+          <Form.Item label="邮箱" style={{ marginRight: '8px', marginBottom: '8px' }}>
+            <Input
+              placeholder="请输入邮箱"
+              value={searchEmail}
+              onChange={(e) => setSearchEmail(e.target.value)}
+              prefix={<SearchOutlined />}
+              style={{ width: 200 }}
+            />
+          </Form.Item>
+          <Form.Item label="状态" style={{ marginRight: '8px', marginBottom: '8px' }}>
+            <Select
+              placeholder="请选择状态"
+              value={searchStatus}
+              onChange={(value) => setSearchStatus(value)}
+              style={{ width: 120 }}
+              allowClear
             >
-              新增用户
-            </Button>
-          </Space>
-        </Form.Item>
-      </Form>
+              <Select.Option value="1">启用</Select.Option>
+              <Select.Option value="0">禁用</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item style={{ marginBottom: '8px' }}>
+            <Space>
+              <Button type="primary" onClick={handleSearch}>
+                搜索
+              </Button>
+              <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
+                刷新
+              </Button>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleCreate}
+              >
+                新增用户
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </div>
 
       <Table
         columns={columns}

@@ -211,49 +211,51 @@ const LogList = () => {
 
   return (
     <Card>
-      <Form layout="inline" style={{ marginBottom: '16px', flexWrap: 'wrap', alignItems: 'flex-end', width: '100%' }}>
-        <Form.Item label="任务名称" style={{ marginRight: '8px', marginBottom: '8px' }}>
-          <Input
-            placeholder="请输入任务名称"
-            value={searchTask}
-            onChange={(e) => setSearchTask(e.target.value)}
-            prefix={<SearchOutlined />}
-            style={{ width: 200 }}
-          />
-        </Form.Item>
-        <Form.Item label="状态" style={{ marginRight: '8px', marginBottom: '8px' }}>
-          <Select
-            placeholder="请选择状态"
-            value={searchStatus}
-            onChange={setSearchStatus}
-            style={{ width: 120 }}
-            allowClear
-          >
-            <Select.Option value="2">成功</Select.Option>
-            <Select.Option value="1">执行中</Select.Option>
-            <Select.Option value="0">失败</Select.Option>
-          </Select>
-        </Form.Item>
-        <Form.Item style={{ marginBottom: '8px' }}>
-          <Space>
-            <Button type="primary" onClick={handleSearch}>
-              搜索
-            </Button>
-            <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
-              刷新
-            </Button>
-            {user?.is_admin === 1 && (
-              <Button 
-                danger 
-                icon={<DeleteOutlined />}
-                onClick={handleClearLogs}
-              >
-                清空日志
+      <div style={{ marginBottom: '16px', width: '100%' }}>
+        <Form layout="inline" style={{ flexWrap: 'wrap', alignItems: 'flex-end', width: '100%' }}>
+          <Form.Item label="任务名称" style={{ marginRight: '8px', marginBottom: '8px' }}>
+            <Input
+              placeholder="请输入任务名称"
+              value={searchTask}
+              onChange={(e) => setSearchTask(e.target.value)}
+              prefix={<SearchOutlined />}
+              style={{ width: 200 }}
+            />
+          </Form.Item>
+          <Form.Item label="状态" style={{ marginRight: '8px', marginBottom: '8px' }}>
+            <Select
+              placeholder="请选择状态"
+              value={searchStatus}
+              onChange={setSearchStatus}
+              style={{ width: 120 }}
+              allowClear
+            >
+              <Select.Option value="2">成功</Select.Option>
+              <Select.Option value="1">执行中</Select.Option>
+              <Select.Option value="0">失败</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item style={{ marginBottom: '8px' }}>
+            <Space>
+              <Button type="primary" onClick={handleSearch}>
+                搜索
               </Button>
-            )}
-          </Space>
-        </Form.Item>
-      </Form>
+              <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
+                刷新
+              </Button>
+              {user?.is_admin === 1 && (
+                <Button 
+                  danger 
+                  icon={<DeleteOutlined />}
+                  onClick={handleClearLogs}
+                >
+                  清空日志
+                </Button>
+              )}
+            </Space>
+          </Form.Item>
+        </Form>
+      </div>
 
       <Table
         columns={columns}
