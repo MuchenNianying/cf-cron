@@ -24,7 +24,9 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      console.log('用户信息:', parsedUser);
     } else {
       navigate('/login');
     }

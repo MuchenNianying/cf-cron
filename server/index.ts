@@ -22,6 +22,23 @@ type EnvWithJWT = {
   SECRET_KEY: string;
 };
 
+const generateSalt = (): string => {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let salt = '';
+  for (let i = 0; i < 6; i++) {
+    salt += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return salt;
+};
+
+const generateHash = async (password: string, salt: string): Promise<string> => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password + salt);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
+};
+
 const verifyToken = async (token: string, secret: string): Promise<any> => {
   try {
     const [encodedHeader, encodedPayload, encodedSignature] = token.split('.');
@@ -200,6 +217,55 @@ adminRoutes.route('/settings', settingRoutes);
 
 // 用户路由（仅管理员可以访问）
 adminRoutes.route('/users', userRoutes);
+
+// 个人用户操作路由（所有认证用户都可以访问）
+protectedRoutes.post('/users/change-password', async (c) => {
+  const { old_password, new_password, confirm_password } = await c.req.json();
+  
+  // 验证参数
+  if (!old_password || !new_password || !confirm_password) {
+    return c.json({ error: '请填写所有密码字段' }, 400);
+  }
+  
+  if (new_password !== confirm_password) {
+    return c.json({ error: '两次输入的密码不一致' }, 400);
+  }
+  
+  // 获取当前用户ID（从JWT token中获取）
+  const user = c.get('user');
+  if (!user || !user.id) {
+    return c.json({ error: '用户未认证' }, 401);
+  }
+  
+  const userId = user.id;
+  
+  // 获取用户信息
+  const userInfo = await c.env.DB.prepare('SELECT id, password, salt FROM users WHERE id = ?').bind(userId).first();
+  
+  if (!userInfo) {
+    return c.json({ error: '用户不存在' }, 404);
+  }
+  
+  // 验证原密码
+  const hashedOldPassword = await generateHash(old_password, userInfo.salt);
+  if (hashedOldPassword !== userInfo.password) {
+    return c.json({ error: '原密码错误' }, 400);
+  }
+  
+  // 更新密码
+  const salt = generateSalt();
+  const hashedNewPassword = await generateHash(new_password, salt);
+  
+  const result = await c.env.DB.prepare(
+    'UPDATE users SET password = ?, salt = ?, updated = CURRENT_TIMESTAMP WHERE id = ?'
+  ).bind(hashedNewPassword, salt, userId).run();
+  
+  if (!result.success) {
+    return c.json({ error: '密码修改失败' }, 500);
+  }
+  
+  return c.json({ message: '密码修改成功' });
+});
 
 // 注册受保护的路由
 app.route('/api', protectedRoutes);
