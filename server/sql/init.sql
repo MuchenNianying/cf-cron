@@ -1,7 +1,7 @@
 -- 创建用户表
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name VARCHAR(32) NOT NULL UNIQUE,
+  username VARCHAR(32) NOT NULL UNIQUE,
   password VARCHAR(64) NOT NULL,
   salt VARCHAR(6) NOT NULL,
   email VARCHAR(50) NOT NULL UNIQUE DEFAULT '',
@@ -86,7 +86,7 @@ CREATE INDEX IF NOT EXISTS idx_task_logs_start_time ON task_logs(start_time);
 CREATE INDEX IF NOT EXISTS idx_mail_users_status ON mail_users(status);
 
 -- 插入默认管理员用户
-INSERT OR IGNORE INTO users (name, password, salt, email, is_admin, status) VALUES (
+INSERT OR IGNORE INTO users (username, password, salt, email, is_admin, status) VALUES (
   'admin',
   '958d51602bbfbd18b2a084ba848a827c29952bfef170c936419b0922994c0589',
   '123456',

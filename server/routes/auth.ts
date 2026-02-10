@@ -55,7 +55,7 @@ app.post('/login', async (c) => {
     
     // 从数据库中查询用户
     const user = await c.env.DB.prepare(
-      'SELECT id, name, password, salt, email, is_admin, status FROM users WHERE name = ? OR email = ?'
+      'SELECT id, username, password, salt, email, is_admin, status FROM users WHERE username = ? OR email = ?'
     ).bind(username, username).first();
     
     if (!user) {
@@ -75,7 +75,7 @@ app.post('/login', async (c) => {
     
     // 生成 JWT token
     const token = await generateToken(
-      { id: user.id, name: user.name, email: user.email, is_admin: user.is_admin },
+      { id: user.id, name: user.username, email: user.email, is_admin: user.is_admin },
       c.env.SECRET_KEY
     );
     
@@ -88,12 +88,12 @@ app.post('/login', async (c) => {
                     c.env.CF_CONNECTING_IP || 
                     'unknown';
     
-    console.log('登录日志记录:', { username: user.name, ip: clientIP });
+    console.log('登录日志记录:', { username: user.username, ip: clientIP });
     
     try {
       await c.env.DB.prepare(
         'INSERT INTO login_logs (username, ip, login_time) VALUES (?, ?, ?)'
-      ).bind(user.name, clientIP, new Date().toISOString()).run();
+      ).bind(user.username, clientIP, new Date().toISOString()).run();
       console.log('登录日志记录成功');
     } catch (error) {
       console.error('登录日志记录失败:', error);
@@ -104,7 +104,7 @@ app.post('/login', async (c) => {
       token,
       user: {
         id: user.id,
-        username: user.name,
+        username: user.username,
         email: user.email,
         is_admin: user.is_admin
       }
@@ -130,12 +130,12 @@ app.post('/login', async (c) => {
 // 注册
 app.post('/register', async (c) => {
   try {
-    const { name, password, email } = await c.req.json();
+    const { username, password, email } = await c.req.json();
     
     // 检查用户名是否已存在
     const existingUser = await c.env.DB.prepare(
-      'SELECT id FROM users WHERE name = ? OR email = ?'
-    ).bind(name, email).first();
+      'SELECT id FROM users WHERE username = ? OR email = ?'
+    ).bind(username, email).first();
     
     if (existingUser) {
       return c.json({ error: '用户名或邮箱已存在' }, 400);
@@ -145,8 +145,8 @@ app.post('/register', async (c) => {
     const hashedPassword = await generateHash(password, salt);
     
     const result = await c.env.DB.prepare(
-      'INSERT INTO users (name, password, salt, email, is_admin, status) VALUES (?, ?, ?, ?, 0, 1)'
-    ).bind(name, hashedPassword, salt, email).run();
+      'INSERT INTO users (username, password, salt, email, is_admin, status) VALUES (?, ?, ?, ?, 0, 1)'
+    ).bind(username, hashedPassword, salt, email).run();
     
     if (!result.success) {
       return c.json({ error: '注册失败' }, 500);

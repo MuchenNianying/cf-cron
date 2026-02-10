@@ -25,15 +25,15 @@ const generateHash = async (password: string, salt: string): Promise<string> => 
 };
 
 app.get('/', async (c) => {
-  const { page = 1, pageSize = 20, page_size, name, email, status } = c.req.query();
+  const { page = 1, pageSize = 20, page_size, username, email, status } = c.req.query();
   const actualPageSize = page_size || pageSize;
   
-  let query = 'SELECT id, name, email, is_admin, status, created, updated FROM users WHERE 1=1';
+  let query = 'SELECT id, username, email, is_admin, status, created, updated FROM users WHERE 1=1';
   const params: any[] = [];
   
-  if (name) {
-    query += ' AND name LIKE ?';
-    params.push('%' + name + '%');
+  if (username) {
+    query += ' AND username LIKE ?';
+    params.push('%' + username + '%');
   }
   
   if (email) {
@@ -54,9 +54,9 @@ app.get('/', async (c) => {
   let totalQuery = 'SELECT COUNT(*) as count FROM users WHERE 1=1';
   const totalParams: any[] = [];
   
-  if (name) {
-    totalQuery += ' AND name LIKE ?';
-    totalParams.push('%' + name + '%');
+  if (username) {
+    totalQuery += ' AND username LIKE ?';
+    totalParams.push('%' + username + '%');
   }
   
   if (email) {
@@ -75,7 +75,7 @@ app.get('/', async (c) => {
 
 app.get('/:id', async (c) => {
   const id = c.req.param('id');
-  const user = await c.env.DB.prepare('SELECT id, name, email, is_admin, status, created, updated FROM users WHERE id = ?').bind(id).first();
+  const user = await c.env.DB.prepare('SELECT id, username, email, is_admin, status, created, updated FROM users WHERE id = ?').bind(id).first();
   
   if (!user) {
     return c.json({ error: '用户不存在' }, 404);
@@ -85,9 +85,9 @@ app.get('/:id', async (c) => {
 });
 
 app.post('/', async (c) => {
-  const { name, password, email, is_admin, status } = await c.req.json();
+  const { username, password, email, is_admin, status } = await c.req.json();
   
-  if (!name || !password) {
+  if (!username || !password) {
     return c.json({ error: '用户名和密码不能为空' }, 400);
   }
   
@@ -95,8 +95,8 @@ app.post('/', async (c) => {
   const hashedPassword = await generateHash(password, salt);
   
   const result = await c.env.DB.prepare(
-    'INSERT INTO users (name, password, salt, email, is_admin, status) VALUES (?, ?, ?, ?, ?, ?)'
-  ).bind(name, hashedPassword, salt, email || '', is_admin || 0, status || 1).run();
+    'INSERT INTO users (username, password, salt, email, is_admin, status) VALUES (?, ?, ?, ?, ?, ?)'
+  ).bind(username, hashedPassword, salt, email || '', is_admin || 0, status || 1).run();
   
   if (!result.success) {
     return c.json({ error: '创建用户失败' }, 500);
@@ -107,19 +107,19 @@ app.post('/', async (c) => {
 
 app.put('/:id', async (c) => {
   const id = c.req.param('id');
-  const { name, password, email, is_admin, status } = await c.req.json();
+  const { username, password, email, is_admin, status } = await c.req.json();
   
   let result;
   if (password) {
     const salt = generateSalt();
     const hashedPassword = await generateHash(password, salt);
     result = await c.env.DB.prepare(
-      'UPDATE users SET name = ?, password = ?, salt = ?, email = ?, is_admin = ?, status = ?, updated = CURRENT_TIMESTAMP WHERE id = ?'
-    ).bind(name || '', hashedPassword, salt, email || '', is_admin !== undefined ? is_admin : 0, status !== undefined ? status : 1, id).run();
+      'UPDATE users SET username = ?, password = ?, salt = ?, email = ?, is_admin = ?, status = ?, updated = CURRENT_TIMESTAMP WHERE id = ?'
+    ).bind(username || '', hashedPassword, salt, email || '', is_admin !== undefined ? is_admin : 0, status !== undefined ? status : 1, id).run();
   } else {
     result = await c.env.DB.prepare(
-      'UPDATE users SET name = ?, email = ?, is_admin = ?, status = ?, updated = CURRENT_TIMESTAMP WHERE id = ?'
-    ).bind(name || '', email || '', is_admin !== undefined ? is_admin : 0, status !== undefined ? status : 1, id).run();
+      'UPDATE users SET username = ?, email = ?, is_admin = ?, status = ?, updated = CURRENT_TIMESTAMP WHERE id = ?'
+    ).bind(username || '', email || '', is_admin !== undefined ? is_admin : 0, status !== undefined ? status : 1, id).run();
   }
   
   if (!result.success) {

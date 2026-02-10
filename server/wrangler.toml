@@ -6,7 +6,7 @@ main = "index.ts"
 compatibility_date = "2025-12-08"
 
 # D1 数据库绑定配置
-d1_databases = [{ binding = "DB", database_name = "cf-cron-db", database_id = "682edf33-83d0-435a-97f2-31a9e25d19dd" }]
+d1_databases = [{ binding = "DB", database_name = "cf-cron-db", database_id = "2ef66f1c-a701-485c-a658-ce6d7a1f87a2" }]
 
 # 环境变量配置
 [vars]
