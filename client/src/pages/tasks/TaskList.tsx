@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Form, Input, message, Space, Card, Modal } from 'antd';
+import { Table, Button, Form, Input, message, Space, Card, Modal, Switch } from 'antd';
 import { ReloadOutlined, PlusOutlined, SearchOutlined, PlayCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
@@ -132,10 +132,11 @@ const TaskList = () => {
   const handleToggleStatus = async (id: number, currentStatus: number) => {
     try {
       const endpoint = currentStatus === 1 ? 'disable' : 'enable';
+      const newStatus = currentStatus === 1 ? 0 : 1;
       await apiRequest(`tasks/${id}/${endpoint}`, {
         method: 'POST',
       });
-      message.success('状态更新成功');
+      message.success(`状态更新成功，已${newStatus === 1 ? '启用' : '禁用'}`);
       fetchTasks();
     } catch (err: any) {
       message.error(err.message || '状态更新失败');
@@ -221,27 +222,16 @@ const TaskList = () => {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      width: 80,
+      width: 100,
       render: (status: number, record: Task) => (
-        isAdmin ? (
-          <Button
-            type={status === 1 ? 'primary' : 'default'}
-            size="small"
-            onClick={() => handleToggleStatus(record.id, status)}
-          >
-            {status === 1 ? '运行中' : '已停止'}
-          </Button>
-        ) : (
-          <span style={{ 
-            padding: '2px 8px', 
-            borderRadius: '4px', 
-            fontSize: '12px',
-            backgroundColor: status === 1 ? '#f6ffed' : '#fff2f0',
-            color: status === 1 ? '#52c41a' : '#ff4d4f'
-          }}>
-            {status === 1 ? '运行中' : '已停止'}
-          </span>
-        )
+        <Switch
+          checked={status === 1}
+          onChange={(checked) => handleToggleStatus(record.id, status)}
+          style={{
+            width: 44,
+            height: 24,
+          }}
+        />
       ),
     },
     {
@@ -256,7 +246,7 @@ const TaskList = () => {
             icon={<PlayCircleOutlined />}
             onClick={() => handleManualRun(record.id)}
           >
-            执行
+            手动执行
           </Button>
           {isAdmin && (
             <>
@@ -289,6 +279,13 @@ const TaskList = () => {
     fetchTasks();
   };
 
+  const handleReset = () => {
+    setSearchName('');
+    setSearchTag('');
+    setPage(1);
+    fetchTasks();
+  };
+
   return (
     <>
       <Card style={{ marginBottom: '16px' }}>
@@ -314,6 +311,9 @@ const TaskList = () => {
             <Space>
               <Button type="primary" onClick={handleSearch}>
                 搜索
+              </Button>
+              <Button onClick={handleReset}>
+                重置
               </Button>
               <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
                 刷新

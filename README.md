@@ -10,6 +10,7 @@ CF-Cron 是一个基于 Cloudflare Workers 和 D1 数据库的定时任务管理
 - ✅ HTTP 请求支持（GET、POST、PUT、DELETE）
 - ✅ 自定义请求头和请求体
 - ✅ 任务执行日志记录
+- ✅ 系统登录日志记录
 - ✅ 角色权限管理（管理员/普通用户）
 - ✅ 响应式 Web 界面
 - ✅ 支持部署到 Cloudflare Workers
@@ -333,6 +334,12 @@ npm run build
 - `created` (DATETIME): 创建时间
 - `updated` (DATETIME): 更新时间
 
+### `login_logs` 表 - 登录日志
+- `id` (INTEGER PRIMARY KEY AUTOINCREMENT): 日志 ID
+- `username` (TEXT NOT NULL): 登录用户名
+- `ip` (TEXT NOT NULL): 登录客户端 IP
+- `login_time` (DATETIME DEFAULT CURRENT_TIMESTAMP): 登录时间
+
 
 ## 初始账户
 
@@ -376,14 +383,20 @@ npm run build
 
 点击「任务日志」查看所有任务的执行记录。
 
-### 4. 管理用户
+### 4. 查看登录日志
+
+**仅管理员可操作**
+
+点击「登录日志」查看所有用户的登录记录，包括用户名、登录IP和登录时间。
+
+### 5. 管理用户
 
 **仅管理员可操作**
 
 1. 点击「用户管理」
 2. 可以查看、编辑用户信息，或创建新用户
 
-### 5. 系统设置
+### 6. 系统设置
 
 **仅管理员可操作**
 

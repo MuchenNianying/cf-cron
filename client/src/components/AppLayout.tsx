@@ -71,6 +71,11 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
     },
     ...(user?.is_admin === 1 ? [
       {
+        key: '/logs/login',
+        icon: <UserOutlined />,
+        label: '登录日志',
+      },
+      {
         key: '/settings',
         icon: <SettingOutlined />,
         label: '系统设置',

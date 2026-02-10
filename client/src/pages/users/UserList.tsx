@@ -68,6 +68,14 @@ const UserList = () => {
     fetchUsers();
   };
 
+  const handleReset = () => {
+    setSearchName('');
+    setSearchEmail('');
+    setSearchStatus('');
+    setPage(1);
+    fetchUsers();
+  };
+
   const handleCreate = () => {
     setEditingUser(null);
     form.resetFields();
@@ -275,6 +283,9 @@ const UserList = () => {
             <Space>
               <Button type="primary" onClick={handleSearch}>
                 搜索
+              </Button>
+              <Button onClick={handleReset}>
+                重置
               </Button>
               <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
                 刷新
