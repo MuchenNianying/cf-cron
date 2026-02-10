@@ -285,6 +285,7 @@ const UserList = () => {
           total: total,
           showSizeChanger: true,
           showQuickJumper: true,
+          showTotal: (total) => `共 ${total} 条`,
           onChange: (newPage) => setPage(newPage),
           onShowSizeChange: (_, size) => {
             setPageSize(size);
@@ -296,7 +297,6 @@ const UserList = () => {
             page: '页',
             prev_page: '上一页',
             next_page: '下一页',
-            total: `共 ${total} 条`,
           },
         }}
         bordered
