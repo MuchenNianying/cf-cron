@@ -32,11 +32,11 @@ const UserList = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const data = await apiRequest(`users?name=${searchName}&email=${searchEmail}&status=${searchStatus}&page=${page}&page_size=${pageSize}`);
+      const data = await apiRequest(`users?username=${searchName}&email=${searchEmail}&status=${searchStatus}&page=${page}&page_size=${pageSize}`);
       // 转换后端返回的字段为前端User接口定义的字段
       const usersData = (data.users || []).map((user: any) => ({
         id: user.id,
-        username: user.name, // 后端返回name，前端使用username
+        username: user.username, // 后端返回username，前端使用username
         email: user.email,
         role: user.is_admin === 1 ? 'admin' : 'user', // 后端返回is_admin，前端使用role
         status: user.status,
@@ -126,7 +126,7 @@ const UserList = () => {
 
       // 转换前端表单字段为后端 API 期望的字段
       const userData = {
-        name: values.username, // 前端的 username 字段对应后端的 name 字段
+        username: values.username, // 前端的 username 字段对应后端的 username 字段
         password: values.password,
         email: values.email,
         is_admin: values.role === 'admin' ? 1 : 0, // 前端的 role 字段对应后端的 is_admin 字段
