@@ -113,9 +113,9 @@ export class Scheduler {
             // 检查是否已经执行过（避免重复执行）
             console.log('检查是否已经执行过...');
             
-            // 对于分钟级任务，检查过去2分钟内是否执行过
-            // 对于其他任务，检查过去5分钟内是否执行过
-            const checkTime = new Date(now.getTime() - (minutePart === '*' ? 2 : 5) * 60 * 1000);
+            // 对于分钟级任务，检查过去30秒内是否执行过
+            // 对于其他任务，检查过去90秒内是否执行过
+            const checkTime = new Date(now.getTime() - (minutePart === '*' ? 1: 3) * 30 * 1000);
             console.log(`检查时间范围: ${checkTime.toISOString()} 到 ${now.toISOString()}`);
             
             const lastLog = await this.db.prepare(
