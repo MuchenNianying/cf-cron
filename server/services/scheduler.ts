@@ -98,7 +98,7 @@ export class Scheduler {
           
           // 获取任务的 cron 表达式的各个部分
           const cronParts2 = task.spec.split(' ');
-          const minutePart = cronParts2[0];
+          const minutePart = cronParts2[1];
           
           console.log(`Cron 表达式分析: minute=${minutePart}`);
           console.log(`时间检查: 上次执行分钟 ${prevRunMinute}, 当前分钟 ${currentMinute}`);
@@ -114,8 +114,8 @@ export class Scheduler {
             console.log('检查是否已经执行过...');
             
             // 对于分钟级任务，检查过去2分钟内是否执行过
-            // 对于其他任务，检查过去1小时内是否执行过
-            const checkTime = new Date(now.getTime() - (minutePart === '*' ? 2 : 60) * 60 * 1000);
+            // 对于其他任务，检查过去5分钟内是否执行过
+            const checkTime = new Date(now.getTime() - (minutePart === '*' ? 2 : 5) * 60 * 1000);
             console.log(`检查时间范围: ${checkTime.toISOString()} 到 ${now.toISOString()}`);
             
             const lastLog = await this.db.prepare(
