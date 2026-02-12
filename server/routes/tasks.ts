@@ -381,7 +381,7 @@ app.post('/cache/refresh', async (c) => {
 });
 
 // 查询任务缓存（所有认证用户都可以访问）
-app.get('/cache', async (c) => {
+app.get('/cache/query', async (c) => {
   try {
     const scheduler = new Scheduler(c.env);
     // 获取缓存信息
@@ -398,6 +398,7 @@ app.get('/cache', async (c) => {
     return c.json({ 
       message: '查询任务缓存成功',
       cacheInfo: {
+        tasks: updatedCacheInfo.tasks,
         taskCount: updatedCacheInfo.taskCount,
         lastUpdated: new Date(updatedCacheInfo.lastUpdated).toISOString(),
         isExpired: updatedCacheInfo.isExpired

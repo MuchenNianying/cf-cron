@@ -304,7 +304,7 @@ const TaskList = () => {
 
   const handleQueryCache = async () => {
     try {
-      const response = await apiRequest('tasks/cache', {
+      const response = await apiRequest('tasks/cache/search', {
         method: 'GET',
       });
       const { cacheInfo } = response;
