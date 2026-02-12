@@ -31,6 +31,8 @@ const TaskList = () => {
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
   const [user, setUser] = useState<any>(null);
+  const [cacheInfo, setCacheInfo] = useState<any>(null);
+  const [cacheModalVisible, setCacheModalVisible] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -304,11 +306,12 @@ const TaskList = () => {
 
   const handleQueryCache = async () => {
     try {
-      const response = await apiRequest('tasks/cache/search', {
+      const response = await apiRequest('tasks/cache/query', {
         method: 'GET',
       });
       const { cacheInfo } = response;
-      message.success(`任务缓存查询成功：共 ${cacheInfo.taskCount} 个任务，最后更新时间：${new Date(cacheInfo.lastUpdated).toLocaleString()}`);
+      setCacheInfo(cacheInfo);
+      setCacheModalVisible(true);
     } catch (err: any) {
       message.error(err.message || '任务缓存查询失败');
     }
@@ -391,6 +394,85 @@ const TaskList = () => {
           bordered
         />
       </Card>
+
+      <Modal
+        title="任务缓存详情"
+        open={cacheModalVisible}
+        onCancel={() => setCacheModalVisible(false)}
+        footer={[
+          <Button key="close" onClick={() => setCacheModalVisible(false)}>
+            关闭
+          </Button>
+        ]}
+        width={800}
+      >
+        {cacheInfo && (
+          <div>
+            <div style={{ marginBottom: '16px' }}>
+              <strong>缓存状态：</strong>
+              <span style={{ marginLeft: '8px' }}>
+                {cacheInfo.isExpired ? '已过期' : '有效'}
+              </span>
+            </div>
+            <div style={{ marginBottom: '16px' }}>
+              <strong>任务数量：</strong>
+              <span style={{ marginLeft: '8px' }}>
+                {cacheInfo.taskCount}
+              </span>
+            </div>
+            <div style={{ marginBottom: '16px' }}>
+              <strong>最后更新时间：</strong>
+              <span style={{ marginLeft: '8px' }}>
+                {new Date(cacheInfo.lastUpdated).toLocaleString()}
+              </span>
+            </div>
+            <div>
+              <strong>缓存任务列表：</strong>
+              <div style={{ marginTop: '8px' }}>
+                {cacheInfo.tasks && cacheInfo.tasks.length > 0 ? (
+                  <Table
+                    columns={[
+                      {
+                        title: 'ID',
+                        dataIndex: 'id',
+                        key: 'id',
+                        width: 80,
+                      },
+                      {
+                        title: '任务名称',
+                        dataIndex: 'name',
+                        key: 'name',
+                      },
+                      {
+                        title: 'Cron表达式',
+                        dataIndex: 'spec',
+                        key: 'spec',
+                      },
+                      {
+                        title: '状态',
+                        dataIndex: 'status',
+                        key: 'status',
+                        width: 100,
+                        render: (status: number) => (
+                          <span style={{ color: status === 1 ? 'green' : 'red' }}>
+                            {status === 1 ? '启用' : '禁用'}
+                          </span>
+                        ),
+                      },
+                    ]}
+                    dataSource={cacheInfo.tasks}
+                    rowKey="id"
+                    pagination={false}
+                    size="small"
+                  />
+                ) : (
+                  <div style={{ color: '#999' }}>暂无缓存任务</div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
     </>
   );
 };
