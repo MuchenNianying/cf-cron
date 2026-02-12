@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { DB } from '@cloudflare/workers-types';
 import cronParser from 'cron-parser';
+import { Scheduler } from '../services/scheduler';
 
 type Env = {
   DB: DB;
@@ -172,6 +173,14 @@ app.post('/', requireAdmin, async (c) => {
     return c.json({ error: '创建任务失败' }, 500);
   }
   
+  // 更新任务缓存
+  try {
+    const scheduler = new Scheduler(c.env);
+    await scheduler.updateTaskCache();
+  } catch (error) {
+    // 静默处理错误
+  }
+  
   return c.json({ message: '创建任务成功' });
 });
 
@@ -208,6 +217,14 @@ app.put('/:id', requireAdmin, async (c) => {
     return c.json({ error: '更新任务失败' }, 500);
   }
   
+  // 更新任务缓存
+  try {
+    const scheduler = new Scheduler(c.env);
+    await scheduler.updateTaskCache();
+  } catch (error) {
+    // 静默处理错误
+  }
+  
   return c.json({ message: '更新任务成功' });
 });
 
@@ -218,6 +235,14 @@ app.delete('/:id', requireAdmin, async (c) => {
   const result = await c.env.DB.prepare('DELETE FROM tasks WHERE id = ?').bind(id).run();  
   if (!result.success) {
     return c.json({ error: '删除任务失败' }, 500);
+  }
+  
+  // 更新任务缓存
+  try {
+    const scheduler = new Scheduler(c.env);
+    await scheduler.updateTaskCache();
+  } catch (error) {
+    // 静默处理错误
   }
   
   return c.json({ message: '删除任务成功' });
@@ -232,6 +257,14 @@ app.post('/:id/enable', async (c) => {
     return c.json({ error: '启用任务失败' }, 500);
   }
   
+  // 更新任务缓存
+  try {
+    const scheduler = new Scheduler(c.env);
+    await scheduler.updateTaskCache();
+  } catch (error) {
+    // 静默处理错误
+  }
+  
   return c.json({ message: '启用任务成功' });
 });
 
@@ -242,6 +275,14 @@ app.post('/:id/disable', async (c) => {
   const result = await c.env.DB.prepare('UPDATE tasks SET status = 0 WHERE id = ?').bind(id).run();  
   if (!result.success) {
     return c.json({ error: '禁用任务失败' }, 500);
+  }
+  
+  // 更新任务缓存
+  try {
+    const scheduler = new Scheduler(c.env);
+    await scheduler.updateTaskCache();
+  } catch (error) {
+    // 静默处理错误
   }
   
   return c.json({ message: '禁用任务成功' });

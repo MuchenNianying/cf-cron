@@ -163,10 +163,30 @@ const TaskEdit = () => {
           <Form.Item
             name="spec"
             label="Cron表达式"
-            rules={[{ required: true, message: '请输入Cron表达式' }]}
-            help="6位格式：秒 分 时 日 月 星期，例如：0 * * * * *（每分钟执行）"
+            rules={[
+              { required: true, message: '请输入Cron表达式' },
+              {
+                validator: (_, value) => {
+                  if (!value) {
+                    return Promise.resolve();
+                  }
+                  const parts = value.trim().split(/\s+/);
+                  if (parts.length !== 5) {
+                    return Promise.reject(new Error('Cron表达式必须为5位格式：分 时 日 月 星期'));
+                  }
+                  // 简单验证每个部分是否为有效的 cron 字段
+                  const [minute, hour, day, month, weekday] = parts;
+                  const validChars = /^[\d\*\/\-,]+$/;
+                  if (!validChars.test(minute) || !validChars.test(hour) || !validChars.test(day) || !validChars.test(month) || !validChars.test(weekday)) {
+                    return Promise.reject(new Error('Cron表达式包含无效字符'));
+                  }
+                  return Promise.resolve();
+                }
+              }
+            ]}
+            help="5位格式：分 时 日 月 星期，例如：0 * * * *（每小时执行）"
           >
-            <Input placeholder="* * * * * *" />
+            <Input placeholder="* * * * *" />
           </Form.Item>
           <Form.Item
             name="remark"
