@@ -291,6 +291,29 @@ const TaskList = () => {
     fetchTasks();
   };
 
+  const handleRefreshCache = async () => {
+    try {
+      await apiRequest('tasks/cache/refresh', {
+        method: 'POST',
+      });
+      message.success('任务缓存刷新成功');
+    } catch (err: any) {
+      message.error(err.message || '任务缓存刷新失败');
+    }
+  };
+
+  const handleQueryCache = async () => {
+    try {
+      const response = await apiRequest('tasks/cache', {
+        method: 'GET',
+      });
+      const { cacheInfo } = response;
+      message.success(`任务缓存查询成功：共 ${cacheInfo.taskCount} 个任务，最后更新时间：${new Date(cacheInfo.lastUpdated).toLocaleString()}`);
+    } catch (err: any) {
+      message.error(err.message || '任务缓存查询失败');
+    }
+  };
+
   return (
     <>
       <Card style={{ marginBottom: '16px' }}>
@@ -322,6 +345,12 @@ const TaskList = () => {
               </Button>
               <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
                 刷新
+              </Button>
+              <Button icon={<ReloadOutlined />} onClick={handleRefreshCache}>
+                刷新缓存
+              </Button>
+              <Button icon={<SearchOutlined />} onClick={handleQueryCache}>
+                查询缓存
               </Button>
               {isAdmin && (
                 <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/tasks/create')}>

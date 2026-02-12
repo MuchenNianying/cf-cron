@@ -19,12 +19,16 @@ interface Env {
   SECRET_KEY: string;
 }
 
+// 全局缓存对象
+const globalCache = {
+  tasks: [],
+  timestamp: 0,
+  expiry: 24 * 60 * 60 * 1000 // 缓存过期时间：1天
+};
+
 export class Scheduler {
   private db: any;
   private secretKey: string;
-  private taskCache: any[] = [];
-  private cacheTimestamp: number = 0;
-  private cacheExpiry: number = 24 * 60 * 60 * 1000; // 缓存过期时间：1天
 
   constructor(env: Env) {
     this.db = env.DB;
@@ -33,23 +37,33 @@ export class Scheduler {
 
   // 清空任务缓存
   public clearTaskCache() {
-    this.taskCache = [];
-    this.cacheTimestamp = 0;
+    globalCache.tasks = [];
+    globalCache.timestamp = 0;
   }
 
   // 手动更新任务缓存
   public async updateTaskCache() {
     try {
       const tasks = await this.db.prepare(
-        'SELECT id, name, spec, protocol, command, http_method, timeout, retry_times, retry_interval, request_headers, request_body FROM tasks WHERE status = 1'
+        'SELECT id, name, spec, protocol, command, http_method, timeout, retry_times, retry_interval, request_headers, request_body, status FROM tasks WHERE status = 1'
       ).all();
       
-      this.taskCache = tasks.results || [];
-      this.cacheTimestamp = Date.now();
+      globalCache.tasks = tasks.results || [];
+      globalCache.timestamp = Date.now();
     } catch (error) {
       // 静默处理错误
-      this.taskCache = [];
+      globalCache.tasks = [];
     }
+  }
+
+  // 获取任务缓存信息
+  public getCacheInfo() {
+    return {
+      tasks: globalCache.tasks,
+      taskCount: globalCache.tasks.length,
+      lastUpdated: globalCache.timestamp,
+      isExpired: Date.now() - globalCache.timestamp > globalCache.expiry
+    };
   }
 
   async run() {
@@ -60,19 +74,19 @@ export class Scheduler {
       let tasks = [];
       
       // 检查缓存是否过期或为空
-      const isCacheExpired = Date.now() - this.cacheTimestamp > this.cacheExpiry;
-      if (isCacheExpired || this.taskCache.length === 0) {
+      const isCacheExpired = Date.now() - globalCache.timestamp > globalCache.expiry;
+      if (isCacheExpired || globalCache.tasks.length === 0) {
         // 从数据库获取任务列表
         const dbTasks = await this.db.prepare(
           'SELECT id, name, spec, protocol, command, http_method, timeout, retry_times, retry_interval, request_headers, request_body FROM tasks WHERE status = 1'
         ).all();
         tasks = dbTasks.results || [];
         // 更新缓存
-        this.taskCache = tasks;
-        this.cacheTimestamp = Date.now();
+        globalCache.tasks = tasks;
+        globalCache.timestamp = Date.now();
       } else {
         // 使用缓存的任务列表
-        tasks = this.taskCache;
+        tasks = globalCache.tasks;
       }
       
       if (tasks.length === 0) {

@@ -368,4 +368,45 @@ app.post('/:id/run', async (c) => {
   }
 });
 
+// 刷新任务缓存（所有认证用户都可以访问）
+app.post('/cache/refresh', async (c) => {
+  try {
+    const scheduler = new Scheduler(c.env);
+    await scheduler.updateTaskCache();
+    return c.json({ message: '任务缓存刷新成功' });
+  } catch (error) {
+    console.error('任务缓存刷新失败:', error);
+    return c.json({ error: '任务缓存刷新失败' }, 500);
+  }
+});
+
+// 查询任务缓存（所有认证用户都可以访问）
+app.get('/cache', async (c) => {
+  try {
+    const scheduler = new Scheduler(c.env);
+    // 获取缓存信息
+    const cacheInfo = scheduler.getCacheInfo();
+    
+    // 检查缓存是否过期，如果过期则更新
+    if (cacheInfo.isExpired) {
+      await scheduler.updateTaskCache();
+    }
+    
+    // 重新获取更新后的缓存信息
+    const updatedCacheInfo = scheduler.getCacheInfo();
+    
+    return c.json({ 
+      message: '查询任务缓存成功',
+      cacheInfo: {
+        taskCount: updatedCacheInfo.taskCount,
+        lastUpdated: new Date(updatedCacheInfo.lastUpdated).toISOString(),
+        isExpired: updatedCacheInfo.isExpired
+      }
+    });
+  } catch (error) {
+    console.error('查询任务缓存失败:', error);
+    return c.json({ error: '查询任务缓存失败' }, 500);
+  }
+});
+
 export default app;
