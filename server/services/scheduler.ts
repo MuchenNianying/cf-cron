@@ -41,7 +41,7 @@ export class Scheduler {
   public async updateTaskCache() {
     try {
       const tasks = await this.db.prepare(
-        'SELECT id, name, spec FROM tasks WHERE status = 1'
+        'SELECT id, name, spec, protocol, command, http_method, timeout, retry_times, retry_interval, request_headers, request_body FROM tasks WHERE status = 1'
       ).all();
       
       this.taskCache = tasks.results || [];
@@ -54,7 +54,6 @@ export class Scheduler {
 
   async run() {
     const now = new Date();
-    console.log(`=== 调度器运行开始 ===`);
     
     // 获取所有启用的任务（优先使用缓存）
     try {
@@ -63,50 +62,47 @@ export class Scheduler {
       // 检查缓存是否过期或为空
       const isCacheExpired = Date.now() - this.cacheTimestamp > this.cacheExpiry;
       if (isCacheExpired || this.taskCache.length === 0) {
-        console.log('缓存过期或为空，重新获取任务列表');
         // 从数据库获取任务列表
         const dbTasks = await this.db.prepare(
-          'SELECT id, name, spec FROM tasks WHERE status = 1'
+          'SELECT id, name, spec, protocol, command, http_method, timeout, retry_times, retry_interval, request_headers, request_body FROM tasks WHERE status = 1'
         ).all();
         tasks = dbTasks.results || [];
         // 更新缓存
         this.taskCache = tasks;
         this.cacheTimestamp = Date.now();
       } else {
-        console.log('使用缓存的任务列表');
         // 使用缓存的任务列表
         tasks = this.taskCache;
       }
       
       if (tasks.length === 0) {
-        console.log('没有找到启用的任务，调度器结束');
         return;
       }
       
-      console.log(`找到 ${tasks.length} 个启用的任务`);
-      
-      for (const task of tasks as any[]) {
+      // 并行执行任务，减少总执行时间
+      const executionPromises = tasks.map(async (task: any) => {
         try {
           // 验证任务配置
           if (!task.spec) {
-            continue;
+            return;
           }
           
           // 检查是否需要执行任务
           if (this.shouldExecuteTask(task.spec, now)) {
             // 直接执行任务，不考虑是否重复执行
             // 只要当前时间在 cron 表达式的时间所属时间（一分钟误差内）就执行
-            await this.executeTaskById(task.id);
+            await this.executeTask(task);
           }
         } catch (error) {
           // 静默处理错误
         }
-      }
+      });
+      
+      // 等待所有任务执行完成
+      await Promise.all(executionPromises);
     } catch (error) {
       // 静默处理错误
     }
-    
-    console.log(`=== 调度器运行结束 ===`);
   }
 
   private shouldExecuteTask(cronExpression: string, currentTime: Date): boolean {
@@ -119,14 +115,7 @@ export class Scheduler {
         return false;
       }
       
-      // 对于常见的 cron 表达式，使用简单的判断逻辑
-      // 分钟级任务 (* * * * *)
-      if (cronExpression === '* * * * *') {
-        // 每分钟执行一次，只要在当前分钟内就执行
-        return true;
-      }
-      
-      // 对于其他任务，使用 cron-parser 解析
+      // 统一使用 cron-parser 解析所有 cron 表达式
       const interval = cronParser.parseExpression(cronExpression, { tz: 'Asia/Shanghai' });
       const prevRun = interval.prev().toDate();
       
@@ -135,21 +124,6 @@ export class Scheduler {
       return timeDiff <= 60 * 1000;
     } catch (error) {
       return false;
-    }
-  }
-
-  private async executeTaskById(taskId: number) {
-    try {
-      // 获取任务详情
-      const task = await this.db.prepare(
-        'SELECT id, name, spec, protocol, command, http_method, timeout, retry_times, retry_interval, request_headers, request_body FROM tasks WHERE id = ?'
-      ).bind(taskId).first();
-      
-      if (task) {
-        await this.executeTask(task as Task);
-      }
-    } catch (error) {
-      // 静默处理错误
     }
   }
 
