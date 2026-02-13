@@ -26,11 +26,10 @@ const globalCache = {
   expiry: 24 * 60 * 60 * 1000 // 缓存过期时间：1天
 };
 
-// Cron 表达式解析缓存
+// Cron 表达式解析缓存（带过期时间）
 const cronCache = new Map();
-
-// 任务执行状态跟踪
-const runningTasks = new Set();
+const cronCacheExpiry = 10 * 60 * 1000; // 缓存过期时间：10分钟
+const cronCacheTimestamps = new Map();
 
 export class Scheduler {
   private db: any;
@@ -74,9 +73,6 @@ export class Scheduler {
   }
 
   async run() {
-    const startTime = Date.now();
-    const startMemory = performance.memory?.usedJSHeapSize;
-    
     const now = new Date();
     
     // 获取所有启用的任务（优先使用缓存）
@@ -100,63 +96,41 @@ export class Scheduler {
       }
       
       if (tasks.length === 0) {
-        const endTime = Date.now();
-        const endMemory = performance.memory?.usedJSHeapSize;
-        console.log(`定时任务执行完成，无任务需要执行。执行时间: ${endTime - startTime}ms`);
-        if (startMemory && endMemory) {
-          console.log(`内存使用变化: ${(endMemory - startMemory) / 1024 / 1024}MB`);
-        }
         return;
       }
       
-      console.log(`开始执行定时任务，共 ${tasks.length} 个任务`);
+      // 限制并行执行的任务数量，避免内存使用过高
+      const maxConcurrentTasks = 5;
+      const taskBatches = [];
       
-      // 一次性执行所有任务
-      const executionPromises = tasks.map(async (task: any) => {
-        try {
-          // 验证任务配置
-          if (!task.spec) {
-            return;
-          }
-          
-          // 检查是否需要执行任务
-          if (this.shouldExecuteTask(task.spec, now)) {
-            // 检查任务是否已经在执行中
-            if (runningTasks.has(task.id)) {
-              console.log(`任务 ${task.id} (${task.name}) 正在执行中，跳过本次执行`);
+      // 将任务分成多个批次
+      for (let i = 0; i < tasks.length; i += maxConcurrentTasks) {
+        taskBatches.push(tasks.slice(i, i + maxConcurrentTasks));
+      }
+      
+      // 按批次执行任务
+      for (const batch of taskBatches) {
+        const executionPromises = batch.map(async (task: any) => {
+          try {
+            // 验证任务配置
+            if (!task.spec) {
               return;
             }
             
-            // 标记任务为执行中
-            runningTasks.add(task.id);
-            
-            try {
-              // 执行任务
+            // 检查是否需要执行任务
+            if (this.shouldExecuteTask(task.spec, now)) {
+              // 直接执行任务
               await this.executeTask(task);
-            } finally {
-              // 标记任务为执行完成
-              runningTasks.delete(task.id);
             }
+          } catch (error) {
+            // 静默处理错误
           }
-        } catch (error) {
-          // 静默处理错误
-          // 确保任务状态被清理
-          runningTasks.delete(task.id);
-        }
-      });
-      
-      // 等待所有任务执行完成
-      await Promise.all(executionPromises);
-      
-      const endTime = Date.now();
-      const endMemory = performance.memory?.usedJSHeapSize;
-      console.log(`所有定时任务执行完成，总执行时间: ${endTime - startTime}ms`);
-      if (startMemory && endMemory) {
-        console.log(`内存使用变化: ${(endMemory - startMemory) / 1024 / 1024}MB`);
+        });
+        
+        // 等待当前批次的任务执行完成
+        await Promise.all(executionPromises);
       }
     } catch (error) {
-      const endTime = Date.now();
-      console.error(`定时任务执行失败: ${error}, 执行时间: ${endTime - startTime}ms`);
     }
   }
 
@@ -170,11 +144,15 @@ export class Scheduler {
         return false;
       }
       
-      // 检查缓存中是否有解析结果
-      if (!cronCache.has(cronExpression)) {
+      // 检查缓存中是否有解析结果，或者缓存是否过期
+      const cacheTimestamp = cronCacheTimestamps.get(cronExpression);
+      const isCacheExpired = !cacheTimestamp || Date.now() - cacheTimestamp > cronCacheExpiry;
+      
+      if (!cronCache.has(cronExpression) || isCacheExpired) {
         // 统一使用 cron-parser 解析所有 cron 表达式
         const interval = cronParser.parseExpression(cronExpression, { tz: 'Asia/Shanghai' });
         cronCache.set(cronExpression, interval);
+        cronCacheTimestamps.set(cronExpression, Date.now());
       }
       
       // 使用缓存的解析结果
