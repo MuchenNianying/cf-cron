@@ -26,10 +26,8 @@ const globalCache = {
   expiry: 24 * 60 * 60 * 1000 // 缓存过期时间：1天
 };
 
-// Cron 表达式解析缓存（带过期时间）
+// Cron 表达式解析缓存
 const cronCache = new Map();
-const cronCacheExpiry = 10 * 60 * 1000; // 缓存过期时间：10分钟
-const cronCacheTimestamps = new Map();
 
 export class Scheduler {
   private db: any;
@@ -144,15 +142,11 @@ export class Scheduler {
         return false;
       }
       
-      // 检查缓存中是否有解析结果，或者缓存是否过期
-      const cacheTimestamp = cronCacheTimestamps.get(cronExpression);
-      const isCacheExpired = !cacheTimestamp || Date.now() - cacheTimestamp > cronCacheExpiry;
-      
-      if (!cronCache.has(cronExpression) || isCacheExpired) {
+      // 检查缓存中是否有解析结果
+      if (!cronCache.has(cronExpression)) {
         // 统一使用 cron-parser 解析所有 cron 表达式
         const interval = cronParser.parseExpression(cronExpression, { tz: 'Asia/Shanghai' });
         cronCache.set(cronExpression, interval);
-        cronCacheTimestamps.set(cronExpression, Date.now());
       }
       
       // 使用缓存的解析结果
