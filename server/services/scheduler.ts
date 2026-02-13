@@ -29,6 +29,9 @@ const globalCache = {
 // Cron 表达式解析缓存
 const cronCache = new Map();
 
+// 任务执行状态跟踪
+const runningTasks = new Set();
+
 export class Scheduler {
   private db: any;
   private secretKey: string;
@@ -108,37 +111,42 @@ export class Scheduler {
       
       console.log(`开始执行定时任务，共 ${tasks.length} 个任务`);
       
-      // 分批执行任务，限制并行执行的任务数量
-      const batchSize = 3; // 每批最多执行 3 个任务
-      for (let i = 0; i < tasks.length; i += batchSize) {
-        const batchTasks = tasks.slice(i, i + batchSize);
-        console.log(`执行第 ${Math.floor(i / batchSize) + 1} 批任务，共 ${batchTasks.length} 个任务`);
-        
-        const batchStartTime = Date.now();
-        const executionPromises = batchTasks.map(async (task: any) => {
-          try {
-            // 验证任务配置
-            if (!task.spec) {
+      // 一次性执行所有任务
+      const executionPromises = tasks.map(async (task: any) => {
+        try {
+          // 验证任务配置
+          if (!task.spec) {
+            return;
+          }
+          
+          // 检查是否需要执行任务
+          if (this.shouldExecuteTask(task.spec, now)) {
+            // 检查任务是否已经在执行中
+            if (runningTasks.has(task.id)) {
+              console.log(`任务 ${task.id} (${task.name}) 正在执行中，跳过本次执行`);
               return;
             }
             
-            // 检查是否需要执行任务
-            if (this.shouldExecuteTask(task.spec, now)) {
-              // 直接执行任务，不考虑是否重复执行
-              // 只要当前时间在 cron 表达式的时间所属时间（一分钟误差内）就执行
+            // 标记任务为执行中
+            runningTasks.add(task.id);
+            
+            try {
+              // 执行任务
               await this.executeTask(task);
+            } finally {
+              // 标记任务为执行完成
+              runningTasks.delete(task.id);
             }
-          } catch (error) {
-            // 静默处理错误
           }
-        });
-        
-        // 等待当前批次的任务执行完成
-        await Promise.all(executionPromises);
-        
-        const batchEndTime = Date.now();
-        console.log(`第 ${Math.floor(i / batchSize) + 1} 批任务执行完成，执行时间: ${batchEndTime - batchStartTime}ms`);
-      }
+        } catch (error) {
+          // 静默处理错误
+          // 确保任务状态被清理
+          runningTasks.delete(task.id);
+        }
+      });
+      
+      // 等待所有任务执行完成
+      await Promise.all(executionPromises);
       
       const endTime = Date.now();
       const endMemory = performance.memory?.usedJSHeapSize;
