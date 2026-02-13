@@ -37,6 +37,17 @@ export const apiRequest = async (endpoint: string, options: RequestInit = {}) =>
     });
     
     if (!response.ok) {
+      // 检查是否是 token 过期（401 Unauthorized）
+      if (response.status === 401) {
+        // 清除本地存储的 token 和用户信息
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        // 跳转到登录页面
+        window.location.href = '/login';
+        // 抛出错误，终止后续执行
+        throw new Error('认证失败，请重新登录');
+      }
+      
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.error || `HTTP Error: ${response.status}`);
     }
