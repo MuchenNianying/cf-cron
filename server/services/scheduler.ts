@@ -26,6 +26,9 @@ const globalCache = {
   expiry: 24 * 60 * 60 * 1000 // 缓存过期时间：1天
 };
 
+// Cron 表达式解析缓存
+const cronCache = new Map();
+
 export class Scheduler {
   private db: any;
   private secretKey: string;
@@ -44,8 +47,9 @@ export class Scheduler {
   // 手动更新任务缓存
   public async updateTaskCache() {
     try {
+      // 只查询必要的字段，减少数据库传输和内存使用
       const tasks = await this.db.prepare(
-        'SELECT id, name, spec, protocol, command, http_method, timeout, retry_times, retry_interval, request_headers, request_body, status FROM tasks WHERE status = 1'
+        'SELECT id, name, spec, protocol, command, http_method, timeout, retry_times, retry_interval, request_headers, request_body FROM tasks WHERE status = 1'
       ).all();
       
       globalCache.tasks = tasks.results || [];
@@ -67,6 +71,9 @@ export class Scheduler {
   }
 
   async run() {
+    const startTime = Date.now();
+    const startMemory = performance.memory?.usedJSHeapSize;
+    
     const now = new Date();
     
     // 获取所有启用的任务（优先使用缓存）
@@ -90,32 +97,58 @@ export class Scheduler {
       }
       
       if (tasks.length === 0) {
+        const endTime = Date.now();
+        const endMemory = performance.memory?.usedJSHeapSize;
+        console.log(`定时任务执行完成，无任务需要执行。执行时间: ${endTime - startTime}ms`);
+        if (startMemory && endMemory) {
+          console.log(`内存使用变化: ${(endMemory - startMemory) / 1024 / 1024}MB`);
+        }
         return;
       }
       
-      // 并行执行任务，减少总执行时间
-      const executionPromises = tasks.map(async (task: any) => {
-        try {
-          // 验证任务配置
-          if (!task.spec) {
-            return;
-          }
-          
-          // 检查是否需要执行任务
-          if (this.shouldExecuteTask(task.spec, now)) {
-            // 直接执行任务，不考虑是否重复执行
-            // 只要当前时间在 cron 表达式的时间所属时间（一分钟误差内）就执行
-            await this.executeTask(task);
-          }
-        } catch (error) {
-          // 静默处理错误
-        }
-      });
+      console.log(`开始执行定时任务，共 ${tasks.length} 个任务`);
       
-      // 等待所有任务执行完成
-      await Promise.all(executionPromises);
+      // 分批执行任务，限制并行执行的任务数量
+      const batchSize = 3; // 每批最多执行 3 个任务
+      for (let i = 0; i < tasks.length; i += batchSize) {
+        const batchTasks = tasks.slice(i, i + batchSize);
+        console.log(`执行第 ${Math.floor(i / batchSize) + 1} 批任务，共 ${batchTasks.length} 个任务`);
+        
+        const batchStartTime = Date.now();
+        const executionPromises = batchTasks.map(async (task: any) => {
+          try {
+            // 验证任务配置
+            if (!task.spec) {
+              return;
+            }
+            
+            // 检查是否需要执行任务
+            if (this.shouldExecuteTask(task.spec, now)) {
+              // 直接执行任务，不考虑是否重复执行
+              // 只要当前时间在 cron 表达式的时间所属时间（一分钟误差内）就执行
+              await this.executeTask(task);
+            }
+          } catch (error) {
+            // 静默处理错误
+          }
+        });
+        
+        // 等待当前批次的任务执行完成
+        await Promise.all(executionPromises);
+        
+        const batchEndTime = Date.now();
+        console.log(`第 ${Math.floor(i / batchSize) + 1} 批任务执行完成，执行时间: ${batchEndTime - batchStartTime}ms`);
+      }
+      
+      const endTime = Date.now();
+      const endMemory = performance.memory?.usedJSHeapSize;
+      console.log(`所有定时任务执行完成，总执行时间: ${endTime - startTime}ms`);
+      if (startMemory && endMemory) {
+        console.log(`内存使用变化: ${(endMemory - startMemory) / 1024 / 1024}MB`);
+      }
     } catch (error) {
-      // 静默处理错误
+      const endTime = Date.now();
+      console.error(`定时任务执行失败: ${error}, 执行时间: ${endTime - startTime}ms`);
     }
   }
 
@@ -129,8 +162,15 @@ export class Scheduler {
         return false;
       }
       
-      // 统一使用 cron-parser 解析所有 cron 表达式
-      const interval = cronParser.parseExpression(cronExpression, { tz: 'Asia/Shanghai' });
+      // 检查缓存中是否有解析结果
+      if (!cronCache.has(cronExpression)) {
+        // 统一使用 cron-parser 解析所有 cron 表达式
+        const interval = cronParser.parseExpression(cronExpression, { tz: 'Asia/Shanghai' });
+        cronCache.set(cronExpression, interval);
+      }
+      
+      // 使用缓存的解析结果
+      const interval = cronCache.get(cronExpression);
       const prevRun = interval.prev().toDate();
       
       // 检查当前时间是否接近上一个执行时间（1分钟内）
@@ -206,9 +246,12 @@ export class Scheduler {
         body = task.request_body;
       }
       
+      // 设置合理的超时时间
+      const timeout = task.timeout || 30; // 默认 30 秒
+      
       // 发送 HTTP 请求
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), (task.timeout || 60) * 1000);
+      const timeoutId = setTimeout(() => controller.abort(), timeout * 1000);
       
       const response = await fetch(task.command, {
         method: task.http_method === 1 ? 'GET' : task.http_method === 2 ? 'POST' : task.http_method === 3 ? 'PUT' : task.http_method === 4 ? 'DELETE' : 'GET',
@@ -219,8 +262,7 @@ export class Scheduler {
       
       clearTimeout(timeoutId);
       
-      await response.text(); // 读取响应内容，避免内存泄漏
-      
+      // 只检查响应状态，不读取响应内容，减少内存使用
       if (!response.ok) {
         throw new Error(`HTTP 错误: ${response.status} ${response.statusText}`);
       }
