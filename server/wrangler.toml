@@ -16,7 +16,7 @@ SECRET_KEY = "123456"
 # 定时触发器配置
 [triggers]
 # Cron 表达式，每分钟触发一次
-crons = ["* * * * *"]
+crons = ["*/5 * * * *"]
 
 # 可观测性配置（已注释）
 # [observability]

@@ -153,9 +153,9 @@ export class Scheduler {
       const interval = cronCache.get(cronExpression);
       const prevRun = interval.prev().toDate();
       
-      // 检查当前时间是否接近上一个执行时间（1分钟内）
+      // 检查当前时间是否接近上一个执行时间（5分钟内）
       const timeDiff = Math.abs(currentTime.getTime() - prevRun.getTime());
-      return timeDiff <= 60 * 1000;
+      return timeDiff <= 5 * 60 * 1000;
     } catch (error) {
       return false;
     }
