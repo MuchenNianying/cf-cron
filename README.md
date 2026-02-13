@@ -92,7 +92,7 @@ cd server
 npm run dev -- --test-scheduled
 ```
 
-服务端将运行在 `http://127.0.0.1:8787`
+服务端将运行在 `http://localhost:8787`
 
 #### 启动前端
 
