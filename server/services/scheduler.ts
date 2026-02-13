@@ -49,7 +49,7 @@ export class Scheduler {
     try {
       // 只查询必要的字段，减少数据库传输和内存使用
       const tasks = await this.db.prepare(
-        'SELECT id, name, spec, protocol, command, http_method, timeout, retry_times, retry_interval, request_headers, request_body FROM tasks WHERE status = 1'
+        'SELECT id, name, spec, protocol, command, http_method, timeout, retry_times, retry_interval, request_headers, request_body, status FROM tasks WHERE status = 1'
       ).all();
       
       globalCache.tasks = tasks.results || [];
@@ -85,7 +85,7 @@ export class Scheduler {
       if (isCacheExpired || globalCache.tasks.length === 0) {
         // 从数据库获取任务列表
         const dbTasks = await this.db.prepare(
-          'SELECT id, name, spec, protocol, command, http_method, timeout, retry_times, retry_interval, request_headers, request_body FROM tasks WHERE status = 1'
+          'SELECT id, name, spec, protocol, command, http_method, timeout, retry_times, retry_interval, request_headers, request_body, status FROM tasks WHERE status = 1'
         ).all();
         tasks = dbTasks.results || [];
         // 更新缓存
