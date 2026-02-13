@@ -14,6 +14,9 @@ CF-Cron 是一个基于 Cloudflare Workers 和 D1 数据库的定时任务管理
 - ✅ 角色权限管理（管理员/普通用户）
 - ✅ 响应式 Web 界面
 - ✅ 支持部署到 Cloudflare Workers
+- ✅ 任务缓存机制，减少数据库查询
+- ✅ Token 过期自动跳转到登录页面
+- ✅ 任务执行资源监控
 
 ## 技术栈
 
@@ -22,7 +25,7 @@ CF-Cron 是一个基于 Cloudflare Workers 和 D1 数据库的定时任务管理
 - Vite 构建工具
 - Ant Design UI 库
 - React Router 路由管理
-- Axios HTTP 客户端
+- Fetch API HTTP 客户端
 
 ### 后端
 - Cloudflare Workers
@@ -59,7 +62,7 @@ cf-cron/
 
 ### 1. 前提条件
 
-- Node.js 18+ 环境
+- Node.js 20+ 环境
 - npm 或 yarn 包管理器
 - Cloudflare 账户
 - Wrangler CLI 已安装 (`npm install -g wrangler`)
@@ -164,10 +167,16 @@ npm run deploy
 
 ### 5. 配置前端 API 地址
 
-编辑 `client/src/App.tsx` 文件，将 API 地址改为你的 Worker URL：
+编辑 `client/.env` 文件（如果不存在则创建），添加以下环境变量：
+
+```
+VITE_SERVER_URL=https://YOUR_WORKER_NAME.YOUR_ACCOUNT.workers.dev/api
+```
+
+或者直接在 `client/src/config/api.ts` 文件中修改 `SERVER_URL` 常量：
 
 ```typescript
-const API_BASE_URL = 'https://YOUR_WORKER_NAME.YOUR_ACCOUNT.workers.dev';
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || '/api';
 ```
 
 ### 6. 构建前端
@@ -269,7 +278,7 @@ npm run build
 
 ### `users` 表 - 用户信息
 - `id` (INTEGER PRIMARY KEY AUTOINCREMENT): 用户 ID
-- `name` (VARCHAR(32) UNIQUE): 用户名
+- `username` (VARCHAR(32) UNIQUE): 用户名
 - `password` (VARCHAR(64)): 密码哈希
 - `salt` (VARCHAR(6)): 密码盐值
 - `email` (VARCHAR(50) UNIQUE): 邮箱
@@ -284,10 +293,10 @@ npm run build
 - `level` (TINYINT): 任务级别
 - `dependency_task_id` (VARCHAR(64)): 依赖任务 ID
 - `dependency_status` (TINYINT): 依赖状态
-- `spec` (VARCHAR(64)): Cron 表达式（6位格式：秒 分 时 日 月 星期）
+- `spec` (VARCHAR(64)): Cron 表达式（5位格式：分 时 日 月 星期）
 - `protocol` (TINYINT): 执行协议 (1=HTTP, 其他值保留)
 - `command` (VARCHAR(256)): 请求 URL（当 protocol=1 时）
-- `http_method` (TINYINT): HTTP 请求方法 (1=GET, 2=POST)
+- `http_method` (TINYINT): HTTP 请求方法 (1=GET, 2=POST, 3=PUT, 4=DELETE)
 - `timeout` (INTEGER): 超时时间（秒）
 - `multi` (TINYINT): 是否允许多实例执行
 - `retry_times` (TINYINT): 重试次数
@@ -346,7 +355,7 @@ npm run build
 系统初始化后会创建一个默认管理员账户：
 
 - **用户名**: `admin`
-- **密码**: `admin123`
+- **密码**: `123456`
 
 首次登录后请立即修改密码！
 
@@ -360,7 +369,7 @@ npm run build
 
 #### 创建任务
 1. 点击「任务管理」→「新建任务」
-2. 填写任务名称、Cron 表达式（6位格式：秒 分 时 日 月 星期）
+2. 填写任务名称、Cron 表达式（5位格式：分 时 日 月 星期）
 3. 选择请求方法（GET、POST、PUT、DELETE）
 4. 填写请求 URL
 5. 设置请求头和请求体（JSON 格式，如果需要）
@@ -378,6 +387,14 @@ npm run build
 1. 在任务列表中找到要执行的任务
 2. 点击「执行」按钮
 3. 任务将立即执行，并在日志中记录结果
+
+#### 刷新缓存
+1. 在任务列表页面，点击「刷新缓存」按钮
+2. 系统将重新从数据库加载所有启用的任务到缓存中
+
+#### 查询缓存
+1. 在任务列表页面，点击「查询缓存」按钮
+2. 系统将显示当前缓存中的任务列表，包括任务数量、最后更新时间和缓存状态
 
 ### 3. 查看日志
 
@@ -431,27 +448,25 @@ npm run build
 
 ## Cron 表达式格式
 
-系统使用标准的 6 位 Cron 表达式格式（秒 分 时 日 月 星期）：
+系统使用标准的 5 位 Cron 表达式格式（分 时 日 月 星期）：
 
 ```
-┌───────────── 秒 (0-59)
-│ ┌───────────── 分钟 (0-59)
-│ │ ┌───────────── 小时 (0-23)
-│ │ │ ┌───────────── 日 (1-31)
-│ │ │ │ ┌───────────── 月 (1-12)
-│ │ │ │ │ ┌───────────── 星期 (0-6) (0 表示星期日)
-│ │ │ │ │ │
-* * * * * *
+┌───────────── 分钟 (0-59)
+│ ┌───────────── 小时 (0-23)
+│ │ ┌───────────── 日 (1-31)
+│ │ │ ┌───────────── 月 (1-12)
+│ │ │ │ ┌───────────── 星期 (0-6) (0 表示星期日)
+│ │ │ │ │
+* * * * *
 ```
 
 ### 示例
 
-- `* * * * * *` - 每秒执行一次
-- `0 * * * * *` - 每分钟执行一次
-- `0 0 * * * *` - 每小时执行一次
-- `0 0 0 * * *` - 每天午夜执行一次
-- `0 0 0 * * 0` - 每周日午夜执行一次
-- `0 0 0 1 * *` - 每月1日午夜执行一次
+- `* * * * *` - 每分钟执行一次
+- `0 * * * *` - 每小时执行一次
+- `0 0 * * *` - 每天午夜执行一次
+- `0 0 * * 0` - 每周日午夜执行一次
+- `0 0 1 * *` - 每月1日午夜执行一次
 
 ## 安全建议
 
