@@ -48,6 +48,23 @@ const Login = () => {
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
         padding: '40px'
       }}>
+        <div style={{ 
+          textAlign: 'center', 
+          marginBottom: '20px',
+          fontSize: '28px',
+          fontWeight: 'bold',
+          color: '#1890ff'
+        }}>
+          CF-Cron
+        </div>
+        <div style={{ 
+          textAlign: 'center', 
+          marginBottom: '30px',
+          fontSize: '16px',
+          color: '#606266'
+        }}>
+          定时任务管理系统
+        </div>
         <h2 style={{ 
           textAlign: 'center', 
           marginBottom: '30px',
