@@ -7,7 +7,7 @@ CF-Cron 是一个基于 Cloudflare Workers 和 D1 数据库的定时任务管理
 ### 核心功能
 
 - ✅ 定时任务管理（创建、编辑、删除、启用/禁用）
-- ✅ HTTP 请求支持（GET、POST、PUT、DELETE）
+- ✅ HTTP 请求支持（GET、POST）
 - ✅ 自定义请求头和请求体
 - ✅ 任务执行日志记录
 - ✅ 系统登录日志记录
@@ -296,7 +296,7 @@ npm run build
 - `spec` (VARCHAR(64)): Cron 表达式（5位格式：分 时 日 月 星期）
 - `protocol` (TINYINT): 执行协议 (1=HTTP, 其他值保留)
 - `command` (VARCHAR(256)): 请求 URL（当 protocol=1 时）
-- `http_method` (TINYINT): HTTP 请求方法 (1=GET, 2=POST, 3=PUT, 4=DELETE)
+- `http_method` (TINYINT): HTTP 请求方法 (1=GET, 2=POST)
 - `timeout` (INTEGER): 超时时间（秒）
 - `multi` (TINYINT): 是否允许多实例执行
 - `retry_times` (TINYINT): 重试次数
@@ -370,7 +370,7 @@ npm run build
 #### 创建任务
 1. 点击「任务管理」→「新建任务」
 2. 填写任务名称、Cron 表达式（5位格式：分 时 日 月 星期）
-3. 选择请求方法（GET、POST、PUT、DELETE）
+3. 选择请求方法（GET、POST）
 4. 填写请求 URL
 5. 设置请求头和请求体（JSON 格式，如果需要）
 6. 选择任务状态（启用/禁用）

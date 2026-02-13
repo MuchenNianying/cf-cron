@@ -254,7 +254,7 @@ export class Scheduler {
       const timeoutId = setTimeout(() => controller.abort(), timeout * 1000);
       
       const response = await fetch(task.command, {
-        method: task.http_method === 1 ? 'GET' : task.http_method === 2 ? 'POST' : task.http_method === 3 ? 'PUT' : task.http_method === 4 ? 'DELETE' : 'GET',
+        method: task.http_method === 1 ? 'GET' : task.http_method === 2 ? 'POST' : 'GET',
         headers: headers,
         body: body,
         signal: controller.signal
