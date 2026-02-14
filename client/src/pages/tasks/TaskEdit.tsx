@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Form, Input, Select, Button, message, Card } from 'antd';
+import { Form, Input, Select, Button, message, Card, Row, Col } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
 import { apiRequest } from '../../config/api';
 
@@ -146,55 +146,63 @@ const TaskEdit = () => {
           notify_keyword: '', // 默认无关键字
         }}
       >
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '16px' }}>
-          <Form.Item
-            name="name"
-            label="任务名称"
-            rules={[{ required: true, message: '请输入任务名称' }]}
-          >
-            <Input placeholder="请输入任务名称" />
-          </Form.Item>
-          <Form.Item
-            name="tag"
-            label="标签"
-          >
-            <Input placeholder="请输入标签" />
-          </Form.Item>
-          <Form.Item
-            name="spec"
-            label="Cron表达式"
-            rules={[
-              { required: true, message: '请输入Cron表达式' },
-              {
-                validator: (_, value) => {
-                  if (!value) {
+        <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
+          <Col xs={24} sm={12} md={6}>
+            <Form.Item
+              name="name"
+              label="任务名称"
+              rules={[{ required: true, message: '请输入任务名称' }]}
+            >
+              <Input placeholder="请输入任务名称" />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <Form.Item
+              name="tag"
+              label="标签"
+            >
+              <Input placeholder="请输入标签" />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <Form.Item
+              name="spec"
+              label="Cron表达式"
+              rules={[
+                { required: true, message: '请输入Cron表达式' },
+                {
+                  validator: (_, value) => {
+                    if (!value) {
+                      return Promise.resolve();
+                    }
+                    const parts = value.trim().split(/\s+/);
+                    if (parts.length !== 5) {
+                      return Promise.reject(new Error('Cron表达式必须为5位格式：分 时 日 月 星期'));
+                    }
+                    // 简单验证每个部分是否为有效的 cron 字段
+                    const [minute, hour, day, month, weekday] = parts;
+                    const validChars = /^[\d\*\/\-,]+$/;
+                    if (!validChars.test(minute) || !validChars.test(hour) || !validChars.test(day) || !validChars.test(month) || !validChars.test(weekday)) {
+                      return Promise.reject(new Error('Cron表达式包含无效字符'));
+                    }
                     return Promise.resolve();
                   }
-                  const parts = value.trim().split(/\s+/);
-                  if (parts.length !== 5) {
-                    return Promise.reject(new Error('Cron表达式必须为5位格式：分 时 日 月 星期'));
-                  }
-                  // 简单验证每个部分是否为有效的 cron 字段
-                  const [minute, hour, day, month, weekday] = parts;
-                  const validChars = /^[\d\*\/\-,]+$/;
-                  if (!validChars.test(minute) || !validChars.test(hour) || !validChars.test(day) || !validChars.test(month) || !validChars.test(weekday)) {
-                    return Promise.reject(new Error('Cron表达式包含无效字符'));
-                  }
-                  return Promise.resolve();
                 }
-              }
-            ]}
-            help="5位格式：分 时 日 月 星期，例如：0 * * * *（每小时执行）"
-          >
-            <Input placeholder="* * * * *" />
-          </Form.Item>
-          <Form.Item
-            name="remark"
-            label="备注"
-          >
-            <Input placeholder="请输入备注" />
-          </Form.Item>
-        </div>
+              ]}
+              help="5位格式：分 时 日 月 星期，例如：0 * * * *（每小时执行）"
+            >
+              <Input placeholder="* * * * *" />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <Form.Item
+              name="remark"
+              label="备注"
+            >
+              <Input placeholder="请输入备注" />
+            </Form.Item>
+          </Col>
+        </Row>
 
         <Form.Item
           name="url"
@@ -204,117 +212,164 @@ const TaskEdit = () => {
           <Input placeholder="请输入请求URL" style={{ width: '100%' }} />
         </Form.Item>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '16px' }}>
-          <Form.Item
-            name="method"
-            label="请求方法"
-          >
-            <Select placeholder="请选择请求方法">
-              <Select.Option value="GET">GET</Select.Option>
-              <Select.Option value="POST">POST</Select.Option>
-            </Select>
-          </Form.Item>
-          <Form.Item
-            name="status"
-            label="状态"
-          >
-            <Select placeholder="请选择状态">
-              <Select.Option value={1}>启用</Select.Option>
-              <Select.Option value={0}>禁用</Select.Option>
-            </Select>
-          </Form.Item>
-          <Form.Item
-            name="protocol"
-            label="协议类型"
-          >
-            <Select placeholder="请选择协议类型">
-              <Select.Option value={1}>HTTP</Select.Option>
-              <Select.Option value={2}>HTTPS</Select.Option>
-            </Select>
-          </Form.Item>
-        </div>
+        <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
+          <Col xs={24} sm={12} md={8}>
+            <Form.Item
+              name="method"
+              label="请求方法"
+            >
+              <Select placeholder="请选择请求方法">
+                <Select.Option value="GET">GET</Select.Option>
+                <Select.Option value="POST">POST</Select.Option>
+              </Select>
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12} md={8}>
+            <Form.Item
+              name="status"
+              label="状态"
+            >
+              <Select placeholder="请选择状态">
+                <Select.Option value={1}>启用</Select.Option>
+                <Select.Option value={0}>禁用</Select.Option>
+              </Select>
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12} md={8}>
+            <Form.Item
+              name="protocol"
+              label="协议类型"
+            >
+              <Select placeholder="请选择协议类型">
+                <Select.Option value={1}>HTTP</Select.Option>
+                <Select.Option value={2}>HTTPS</Select.Option>
+              </Select>
+            </Form.Item>
+          </Col>
+        </Row>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '16px' }}>
-          <Form.Item
-            name="dependency_task_id"
-            label="依赖任务ID"
-          >
-            <Input placeholder="请输入依赖任务ID" />
-          </Form.Item>
-          <Form.Item
-            name="dependency_status"
-            label="依赖状态"
-          >
-            <Select placeholder="请选择依赖状态">
-              <Select.Option value={1}>成功</Select.Option>
-              <Select.Option value={0}>失败</Select.Option>
-            </Select>
-          </Form.Item>
-          <Form.Item
-            name="timeout"
-            label="超时时间(秒)"
-          >
-            <Input type="number" placeholder="请输入超时时间" />
-          </Form.Item>
-          <Form.Item
-            name="multi"
-            label="多实例支持"
-          >
-            <Select placeholder="请选择多实例支持">
-              <Select.Option value={1}>支持</Select.Option>
-              <Select.Option value={0}>不支持</Select.Option>
-            </Select>
-          </Form.Item>
-        </div>
+        {/* 颜色分类配置区域 - 一行显示 */}
+        <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
+          {/* 红色区域 - 依赖配置 */}
+          <Col xs={24} md={8}>
+            <div style={{ backgroundColor: '#fff1f0', border: '1px solid #ffa39e', borderRadius: '4px', padding: '16px', height: '100%' }}>
+              <h4 style={{ marginBottom: '12px', color: '#cf1322' }}>依赖配置</h4>
+              <Row gutter={[16, 16]}>
+                <Col xs={24}>
+                  <Form.Item
+                    name="dependency_task_id"
+                    label="依赖任务ID"
+                  >
+                    <Input placeholder="请输入依赖任务ID" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24}>
+                  <Form.Item
+                    name="dependency_status"
+                    label="依赖状态"
+                  >
+                    <Select placeholder="请选择依赖状态">
+                      <Select.Option value={1}>成功</Select.Option>
+                      <Select.Option value={0}>失败</Select.Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col xs={24}>
+                  <Form.Item
+                    name="timeout"
+                    label="超时时间(秒)"
+                  >
+                    <Input type="number" placeholder="请输入超时时间" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24}>
+                  <Form.Item
+                    name="multi"
+                    label="多实例支持"
+                  >
+                    <Select placeholder="请选择多实例支持">
+                      <Select.Option value={1}>支持</Select.Option>
+                      <Select.Option value={0}>不支持</Select.Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+              </Row>
+            </div>
+          </Col>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '16px' }}>
-          <Form.Item
-            name="retry_times"
-            label="重试次数"
-          >
-            <Input type="number" placeholder="请输入重试次数" />
-          </Form.Item>
-          <Form.Item
-            name="retry_interval"
-            label="重试间隔(秒)"
-          >
-            <Input type="number" placeholder="请输入重试间隔" />
-          </Form.Item>
-          <Form.Item
-            name="notify_status"
-            label="通知状态"
-          >
-            <Select placeholder="请选择通知状态">
-              <Select.Option value={1}>启用</Select.Option>
-              <Select.Option value={0}>禁用</Select.Option>
-            </Select>
-          </Form.Item>
-          <Form.Item
-            name="notify_type"
-            label="通知类型"
-          >
-            <Select placeholder="请选择通知类型">
-              <Select.Option value={0}>邮件</Select.Option>
-              <Select.Option value={1}>短信</Select.Option>
-              <Select.Option value={2}>Webhook</Select.Option>
-            </Select>
-          </Form.Item>
-        </div>
+          {/* 黄色区域 - 重试配置 */}
+          <Col xs={24} md={8}>
+            <div style={{ backgroundColor: '#fffbe6', border: '1px solid #ffe58f', borderRadius: '4px', padding: '16px', height: '100%' }}>
+              <h4 style={{ marginBottom: '12px', color: '#d48806' }}>重试配置</h4>
+              <Row gutter={[16, 16]}>
+                <Col xs={24}>
+                  <Form.Item
+                    name="retry_times"
+                    label="重试次数"
+                  >
+                    <Input type="number" placeholder="请输入重试次数" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24}>
+                  <Form.Item
+                    name="retry_interval"
+                    label="重试间隔(秒)"
+                  >
+                    <Input type="number" placeholder="请输入重试间隔" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24}>
+                  <Form.Item
+                    name="notify_status"
+                    label="通知状态"
+                  >
+                    <Select placeholder="请选择通知状态">
+                      <Select.Option value={1}>启用</Select.Option>
+                      <Select.Option value={0}>禁用</Select.Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col xs={24}>
+                  <Form.Item
+                    name="notify_type"
+                    label="通知类型"
+                  >
+                    <Select placeholder="请选择通知类型">
+                      <Select.Option value={0}>邮件</Select.Option>
+                      <Select.Option value={1}>短信</Select.Option>
+                      <Select.Option value={2}>Webhook</Select.Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+              </Row>
+            </div>
+          </Col>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '16px' }}>
-          <Form.Item
-            name="notify_receiver_id"
-            label="通知接收者ID"
-          >
-            <Input placeholder="请输入通知接收者ID" />
-          </Form.Item>
-          <Form.Item
-            name="notify_keyword"
-            label="通知关键字"
-          >
-            <Input placeholder="请输入通知关键字" />
-          </Form.Item>
-        </div>
+          {/* 蓝色区域 - 通知配置 */}
+          <Col xs={24} md={8}>
+            <div style={{ backgroundColor: '#f0f5ff', border: '1px solid #adc6ff', borderRadius: '4px', padding: '16px', height: '100%' }}>
+              <h4 style={{ marginBottom: '12px', color: '#1867c0' }}>通知配置</h4>
+              <Row gutter={[16, 16]}>
+                <Col xs={24}>
+                  <Form.Item
+                    name="notify_receiver_id"
+                    label="通知接收者ID"
+                  >
+                    <Input placeholder="请输入通知接收者ID" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24}>
+                  <Form.Item
+                    name="notify_keyword"
+                    label="通知关键字"
+                  >
+                    <Input placeholder="请输入通知关键字" />
+                  </Form.Item>
+                </Col>
+              </Row>
+            </div>
+          </Col>
+        </Row>
 
         <Form.Item
           name="headers"
