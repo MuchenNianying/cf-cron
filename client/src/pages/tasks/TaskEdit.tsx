@@ -136,10 +136,10 @@ const TaskEdit = () => {
           protocol: 1, // 默认 HTTP 协议
           dependency_task_id: '', // 默认无依赖
           dependency_status: 1, // 默认依赖状态
-          timeout: 0, // 默认无超时
+          timeout: 30, // 默认30秒超时
           multi: 1, // 默认支持多实例
-          retry_times: 0, // 默认无重试
-          retry_interval: 0, // 默认无重试间隔
+          retry_times: 3, // 默认重试3次
+          retry_interval: 10, // 默认重试间隔10秒
           notify_status: 1, // 默认启用通知
           notify_type: 0, // 默认通知类型
           notify_receiver_id: '', // 默认无接收者
