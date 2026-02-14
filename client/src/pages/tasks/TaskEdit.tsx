@@ -204,14 +204,6 @@ const TaskEdit = () => {
           </Col>
         </Row>
 
-        <Form.Item
-          name="url"
-          label="请求URL"
-          rules={[{ required: true, message: '请输入请求URL' }]}
-        >
-          <Input placeholder="请输入请求URL" style={{ width: '100%' }} />
-        </Form.Item>
-
         <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
           <Col xs={24} sm={12} md={8}>
             <Form.Item
@@ -230,6 +222,15 @@ const TaskEdit = () => {
         <div style={{ backgroundColor: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '4px', padding: '16px', marginBottom: '16px' }}>
           <h4 style={{ marginBottom: '12px', color: '#389e0d' }}>请求配置</h4>
           <Row gutter={[16, 16]}>
+            <Col xs={24}>
+              <Form.Item
+                name="url"
+                label="请求URL"
+                rules={[{ required: true, message: '请输入请求URL' }]}
+              >
+                <Input placeholder="请输入请求URL" style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
             <Col xs={24} sm={12} md={6}>
               <Form.Item
                 name="protocol"
@@ -288,7 +289,7 @@ const TaskEdit = () => {
             <div style={{ backgroundColor: '#fff1f0', border: '1px solid #ffa39e', borderRadius: '4px', padding: '16px', height: '100%' }}>
               <h4 style={{ marginBottom: '12px', color: '#cf1322' }}>依赖配置</h4>
               <Row gutter={[16, 16]}>
-                <Col xs={24}>
+                <Col xs={24} sm={12}>
                   <Form.Item
                     name="dependency_task_id"
                     label="依赖任务ID"
@@ -296,7 +297,7 @@ const TaskEdit = () => {
                     <Input placeholder="请输入依赖任务ID" />
                   </Form.Item>
                 </Col>
-                <Col xs={24}>
+                <Col xs={24} sm={12}>
                   <Form.Item
                     name="dependency_status"
                     label="依赖状态"
@@ -304,17 +305,6 @@ const TaskEdit = () => {
                     <Select placeholder="请选择依赖状态">
                       <Select.Option value={1}>成功</Select.Option>
                       <Select.Option value={0}>失败</Select.Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-                <Col xs={24}>
-                  <Form.Item
-                    name="multi"
-                    label="多实例支持"
-                  >
-                    <Select placeholder="请选择多实例支持">
-                      <Select.Option value={1}>支持</Select.Option>
-                      <Select.Option value={0}>不支持</Select.Option>
                     </Select>
                   </Form.Item>
                 </Col>
@@ -327,7 +317,15 @@ const TaskEdit = () => {
             <div style={{ backgroundColor: '#fffbe6', border: '1px solid #ffe58f', borderRadius: '4px', padding: '16px', height: '100%' }}>
               <h4 style={{ marginBottom: '12px', color: '#d48806' }}>重试配置</h4>
               <Row gutter={[16, 16]}>
-                <Col xs={24}>
+                <Col xs={24} sm={8}>
+                  <Form.Item
+                    name="timeout"
+                    label="超时时间(秒)"
+                  >
+                    <Input type="number" placeholder="请输入超时时间" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={8}>
                   <Form.Item
                     name="retry_times"
                     label="重试次数"
@@ -335,20 +333,12 @@ const TaskEdit = () => {
                     <Input type="number" placeholder="请输入重试次数" />
                   </Form.Item>
                 </Col>
-                <Col xs={24}>
+                <Col xs={24} sm={8}>
                   <Form.Item
                     name="retry_interval"
                     label="重试间隔(秒)"
                   >
                     <Input type="number" placeholder="请输入重试间隔" />
-                  </Form.Item>
-                </Col>
-                <Col xs={24}>
-                  <Form.Item
-                    name="timeout"
-                    label="超时时间(秒)"
-                  >
-                    <Input type="number" placeholder="请输入超时时间" />
                   </Form.Item>
                 </Col>
               </Row>
@@ -360,7 +350,7 @@ const TaskEdit = () => {
             <div style={{ backgroundColor: '#f0f5ff', border: '1px solid #adc6ff', borderRadius: '4px', padding: '16px', height: '100%' }}>
               <h4 style={{ marginBottom: '12px', color: '#1867c0' }}>通知配置</h4>
               <Row gutter={[16, 16]}>
-                <Col xs={24}>
+                <Col xs={24} sm={12}>
                   <Form.Item
                     name="notify_status"
                     label="通知状态"
@@ -371,7 +361,7 @@ const TaskEdit = () => {
                     </Select>
                   </Form.Item>
                 </Col>
-                <Col xs={24}>
+                <Col xs={24} sm={12}>
                   <Form.Item
                     name="notify_type"
                     label="通知类型"
@@ -383,7 +373,7 @@ const TaskEdit = () => {
                     </Select>
                   </Form.Item>
                 </Col>
-                <Col xs={24}>
+                <Col xs={24} sm={12}>
                   <Form.Item
                     name="notify_receiver_id"
                     label="通知接收者ID"
@@ -391,7 +381,7 @@ const TaskEdit = () => {
                     <Input placeholder="请输入通知接收者ID" />
                   </Form.Item>
                 </Col>
-                <Col xs={24}>
+                <Col xs={24} sm={12}>
                   <Form.Item
                     name="notify_keyword"
                     label="通知关键字"
