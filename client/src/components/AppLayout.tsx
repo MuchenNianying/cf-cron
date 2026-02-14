@@ -153,14 +153,15 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
             onClick={handleMenuClick}
           />
         </Sider>
-        <Layout style={{ marginLeft: collapsed ? '80px' : '200px' }}>
+        <Layout style={{ marginLeft: collapsed ? '80px' : '200px', minWidth: '100%' }}>
           <Header style={{ 
             padding: '0 24px', 
             background: '#fff',
             borderBottom: '1px solid #f0f0f0',
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center'
+            alignItems: 'center',
+            minWidth: '100%'
           }}>
             <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
               定时任务管理系统
@@ -173,7 +174,8 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
                   alignItems: 'center',
                   padding: '8px 12px',
                   borderRadius: '4px',
-                  transition: 'background-color 0.3s'
+                  transition: 'background-color 0.3s',
+                  whiteSpace: 'nowrap'
                 }}>
                   <Avatar 
                     icon={<UserOutlined />} 
