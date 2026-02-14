@@ -215,17 +215,6 @@ const TaskEdit = () => {
         <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
           <Col xs={24} sm={12} md={8}>
             <Form.Item
-              name="method"
-              label="请求方法"
-            >
-              <Select placeholder="请选择请求方法">
-                <Select.Option value="GET">GET</Select.Option>
-                <Select.Option value="POST">POST</Select.Option>
-              </Select>
-            </Form.Item>
-          </Col>
-          <Col xs={24} sm={12} md={8}>
-            <Form.Item
               name="status"
               label="状态"
             >
@@ -235,18 +224,62 @@ const TaskEdit = () => {
               </Select>
             </Form.Item>
           </Col>
-          <Col xs={24} sm={12} md={8}>
-            <Form.Item
-              name="protocol"
-              label="协议类型"
-            >
-              <Select placeholder="请选择协议类型">
-                <Select.Option value={1}>HTTP</Select.Option>
-                <Select.Option value={2}>HTTPS</Select.Option>
-              </Select>
-            </Form.Item>
-          </Col>
         </Row>
+
+        {/* 绿色区域 - 请求配置 */}
+        <div style={{ backgroundColor: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '4px', padding: '16px', marginBottom: '16px' }}>
+          <h4 style={{ marginBottom: '12px', color: '#389e0d' }}>请求配置</h4>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={12} md={6}>
+              <Form.Item
+                name="protocol"
+                label="协议类型"
+              >
+                <Select placeholder="请选择协议类型">
+                  <Select.Option value={1}>HTTP</Select.Option>
+                  <Select.Option value={2}>HTTPS</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Form.Item
+                name="method"
+                label="请求方法"
+              >
+                <Select placeholder="请选择请求方法">
+                  <Select.Option value="GET">GET</Select.Option>
+                  <Select.Option value="POST">POST</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="headers"
+                label="请求头 (JSON格式)"
+              >
+                <Input.TextArea 
+                  rows={2} 
+                  placeholder='例如: {"Content-Type": "application/json"}' 
+                  style={{ fontFamily: 'monospace' }}
+                />
+              </Form.Item>
+            </Col>
+            {method === 'POST' && (
+              <Col xs={24}>
+                <Form.Item
+                  name="body"
+                  label="请求体 (JSON格式)"
+                >
+                  <Input.TextArea 
+                    rows={2} 
+                    placeholder='例如: {"key": "value"}' 
+                    style={{ fontFamily: 'monospace' }}
+                  />
+                </Form.Item>
+              </Col>
+            )}
+          </Row>
+        </div>
 
         {/* 颜色分类配置区域 - 一行显示 */}
         <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
@@ -272,14 +305,6 @@ const TaskEdit = () => {
                       <Select.Option value={1}>成功</Select.Option>
                       <Select.Option value={0}>失败</Select.Option>
                     </Select>
-                  </Form.Item>
-                </Col>
-                <Col xs={24}>
-                  <Form.Item
-                    name="timeout"
-                    label="超时时间(秒)"
-                  >
-                    <Input type="number" placeholder="请输入超时时间" />
                   </Form.Item>
                 </Col>
                 <Col xs={24}>
@@ -320,6 +345,23 @@ const TaskEdit = () => {
                 </Col>
                 <Col xs={24}>
                   <Form.Item
+                    name="timeout"
+                    label="超时时间(秒)"
+                  >
+                    <Input type="number" placeholder="请输入超时时间" />
+                  </Form.Item>
+                </Col>
+              </Row>
+            </div>
+          </Col>
+
+          {/* 蓝色区域 - 通知配置 */}
+          <Col xs={24} md={8}>
+            <div style={{ backgroundColor: '#f0f5ff', border: '1px solid #adc6ff', borderRadius: '4px', padding: '16px', height: '100%' }}>
+              <h4 style={{ marginBottom: '12px', color: '#1867c0' }}>通知配置</h4>
+              <Row gutter={[16, 16]}>
+                <Col xs={24}>
+                  <Form.Item
                     name="notify_status"
                     label="通知状态"
                   >
@@ -341,15 +383,6 @@ const TaskEdit = () => {
                     </Select>
                   </Form.Item>
                 </Col>
-              </Row>
-            </div>
-          </Col>
-
-          {/* 蓝色区域 - 通知配置 */}
-          <Col xs={24} md={8}>
-            <div style={{ backgroundColor: '#f0f5ff', border: '1px solid #adc6ff', borderRadius: '4px', padding: '16px', height: '100%' }}>
-              <h4 style={{ marginBottom: '12px', color: '#1867c0' }}>通知配置</h4>
-              <Row gutter={[16, 16]}>
                 <Col xs={24}>
                   <Form.Item
                     name="notify_receiver_id"
@@ -370,30 +403,6 @@ const TaskEdit = () => {
             </div>
           </Col>
         </Row>
-
-        <Form.Item
-          name="headers"
-          label="请求头 (JSON格式)"
-        >
-          <Input.TextArea 
-            rows={4} 
-            placeholder='例如: {"Content-Type": "application/json"}' 
-            style={{ fontFamily: 'monospace' }}
-          />
-        </Form.Item>
-
-        {method === 'POST' && (
-          <Form.Item
-            name="body"
-            label="请求体 (JSON格式)"
-          >
-            <Input.TextArea 
-              rows={4} 
-              placeholder='例如: {"key": "value"}' 
-              style={{ fontFamily: 'monospace' }}
-            />
-          </Form.Item>
-        )}
 
         <Form.Item>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
