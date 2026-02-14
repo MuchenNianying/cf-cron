@@ -14,7 +14,7 @@ const app = new Hono();
 app.use('*', cors({
   origin: '*', // 允许所有来源
   allowHeaders: ['Content-Type', 'Authorization'],
-  allowMethods: ['GET', 'POST', 'OPTIONS'],
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   credentials: true
 }));
 
