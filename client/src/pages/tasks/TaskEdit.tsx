@@ -137,7 +137,6 @@ const TaskEdit = () => {
           dependency_task_id: '', // 默认无依赖
           dependency_status: 1, // 默认依赖状态
           timeout: 30, // 默认30秒超时
-          multi: 1, // 默认支持多实例
           retry_times: 3, // 默认重试3次
           retry_interval: 10, // 默认重试间隔10秒
           notify_status: 1, // 默认启用通知
@@ -146,91 +145,85 @@ const TaskEdit = () => {
           notify_keyword: '', // 默认无关键字
         }}
       >
-        <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
-          <Col xs={24} sm={12} md={6}>
-            <Form.Item
-              name="name"
-              label="任务名称"
-              rules={[{ required: true, message: '请输入任务名称' }]}
-            >
-              <Input placeholder="请输入任务名称" />
-            </Form.Item>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Form.Item
-              name="tag"
-              label="标签"
-            >
-              <Input placeholder="请输入标签" />
-            </Form.Item>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Form.Item
-              name="spec"
-              label="Cron表达式"
-              rules={[
-                { required: true, message: '请输入Cron表达式' },
-                {
-                  validator: (_, value) => {
-                    if (!value) {
+        {/* 基本配置 */}
+        <div style={{ marginBottom: '24px' }}>
+          <h4 style={{ marginBottom: '16px', color: '#333', fontSize: '16px' }}>基本配置</h4>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={12} md={6}>
+              <Form.Item
+                name="name"
+                label="任务名称"
+                rules={[{ required: true, message: '请输入任务名称' }]}
+              >
+                <Input placeholder="请输入任务名称" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Form.Item
+                name="tag"
+                label="标签"
+              >
+                <Input placeholder="请输入标签" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Form.Item
+                name="spec"
+                label="Cron表达式"
+                rules={[
+                  { required: true, message: '请输入Cron表达式' },
+                  {
+                    validator: (_, value) => {
+                      if (!value) {
+                        return Promise.resolve();
+                      }
+                      const parts = value.trim().split(/\s+/);
+                      if (parts.length !== 5) {
+                        return Promise.reject(new Error('Cron表达式必须为5位格式：分 时 日 月 星期'));
+                      }
+                      // 简单验证每个部分是否为有效的 cron 字段
+                      const [minute, hour, day, month, weekday] = parts;
+                      const validChars = /^[\d\*\/\-,]+$/;
+                      if (!validChars.test(minute) || !validChars.test(hour) || !validChars.test(day) || !validChars.test(month) || !validChars.test(weekday)) {
+                        return Promise.reject(new Error('Cron表达式包含无效字符'));
+                      }
                       return Promise.resolve();
                     }
-                    const parts = value.trim().split(/\s+/);
-                    if (parts.length !== 5) {
-                      return Promise.reject(new Error('Cron表达式必须为5位格式：分 时 日 月 星期'));
-                    }
-                    // 简单验证每个部分是否为有效的 cron 字段
-                    const [minute, hour, day, month, weekday] = parts;
-                    const validChars = /^[\d\*\/\-,]+$/;
-                    if (!validChars.test(minute) || !validChars.test(hour) || !validChars.test(day) || !validChars.test(month) || !validChars.test(weekday)) {
-                      return Promise.reject(new Error('Cron表达式包含无效字符'));
-                    }
-                    return Promise.resolve();
                   }
-                }
-              ]}
-              help="5位格式：分 时 日 月 星期，例如：0 * * * *（每小时执行）"
-            >
-              <Input placeholder="* * * * *" />
-            </Form.Item>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Form.Item
-              name="remark"
-              label="备注"
-            >
-              <Input placeholder="请输入备注" />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
-          <Col xs={24} sm={12} md={8}>
-            <Form.Item
-              name="status"
-              label="状态"
-            >
-              <Select placeholder="请选择状态">
-                <Select.Option value={1}>启用</Select.Option>
-                <Select.Option value={0}>禁用</Select.Option>
-              </Select>
-            </Form.Item>
-          </Col>
-        </Row>
-
-        {/* 绿色区域 - 请求配置 */}
-        <div style={{ backgroundColor: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '4px', padding: '16px', marginBottom: '16px' }}>
-          <h4 style={{ marginBottom: '12px', color: '#389e0d' }}>请求配置</h4>
+                ]}
+                help="5位格式：分 时 日 月 星期，例如：0 * * * *（每小时执行）"
+              >
+                <Input placeholder="* * * * *" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Form.Item
+                name="status"
+                label="状态"
+              >
+                <Select placeholder="请选择状态">
+                  <Select.Option value={1}>启用</Select.Option>
+                  <Select.Option value={0}>禁用</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
           <Row gutter={[16, 16]}>
             <Col xs={24}>
               <Form.Item
-                name="url"
-                label="请求URL"
-                rules={[{ required: true, message: '请输入请求URL' }]}
+                name="remark"
+                label="备注"
               >
-                <Input placeholder="请输入请求URL" style={{ width: '100%' }} />
+                <Input placeholder="请输入备注" />
               </Form.Item>
             </Col>
+          </Row>
+        </div>
+
+        {/* 请求配置 */}
+        <div style={{ marginBottom: '24px' }}>
+          <h4 style={{ marginBottom: '16px', color: '#333', fontSize: '16px' }}>请求配置</h4>
+          <Row gutter={[16, 16]}>
             <Col xs={24} sm={12} md={6}>
               <Form.Item
                 name="protocol"
@@ -253,146 +246,152 @@ const TaskEdit = () => {
                 </Select>
               </Form.Item>
             </Col>
-            <Col xs={24} md={12}>
+          </Row>
+          <Row gutter={[16, 16]}>
+            <Col xs={24}>
+              <Form.Item
+                name="url"
+                label="请求URL"
+                rules={[{ required: true, message: '请输入请求URL' }]}
+              >
+                <Input placeholder="请输入请求URL" style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={[16, 16]}>
+            <Col xs={24}>
               <Form.Item
                 name="headers"
                 label="请求头 (JSON格式)"
               >
                 <Input.TextArea 
-                  rows={2} 
+                  rows={4} 
                   placeholder='例如: {"Content-Type": "application/json"}' 
                   style={{ fontFamily: 'monospace' }}
                 />
               </Form.Item>
             </Col>
-            {method === 'POST' && (
+          </Row>
+          {method === 'POST' && (
+            <Row gutter={[16, 16]}>
               <Col xs={24}>
                 <Form.Item
                   name="body"
                   label="请求体 (JSON格式)"
                 >
                   <Input.TextArea 
-                    rows={2} 
+                    rows={4} 
                     placeholder='例如: {"key": "value"}' 
                     style={{ fontFamily: 'monospace' }}
                   />
                 </Form.Item>
               </Col>
-            )}
+            </Row>
+          )}
+        </div>
+
+        {/* 依赖配置 */}
+        <div style={{ marginBottom: '24px' }}>
+          <h4 style={{ marginBottom: '16px', color: '#333', fontSize: '16px' }}>依赖配置</h4>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={12} md={6}>
+              <Form.Item
+                name="dependency_task_id"
+                label="依赖任务ID"
+              >
+                <Input placeholder="请输入依赖任务ID" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Form.Item
+                name="dependency_status"
+                label="依赖状态"
+              >
+                <Select placeholder="请选择依赖状态">
+                  <Select.Option value={1}>成功</Select.Option>
+                  <Select.Option value={0}>失败</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
           </Row>
         </div>
 
-        {/* 颜色分类配置区域 - 一行显示 */}
-        <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
-          {/* 红色区域 - 依赖配置 */}
-          <Col xs={24} md={8}>
-            <div style={{ backgroundColor: '#fff1f0', border: '1px solid #ffa39e', borderRadius: '4px', padding: '16px', height: '100%' }}>
-              <h4 style={{ marginBottom: '12px', color: '#cf1322' }}>依赖配置</h4>
-              <Row gutter={[16, 16]}>
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    name="dependency_task_id"
-                    label="依赖任务ID"
-                  >
-                    <Input placeholder="请输入依赖任务ID" />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    name="dependency_status"
-                    label="依赖状态"
-                  >
-                    <Select placeholder="请选择依赖状态">
-                      <Select.Option value={1}>成功</Select.Option>
-                      <Select.Option value={0}>失败</Select.Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-              </Row>
-            </div>
-          </Col>
+        {/* 重试配置 */}
+        <div style={{ marginBottom: '24px' }}>
+          <h4 style={{ marginBottom: '16px', color: '#333', fontSize: '16px' }}>重试配置</h4>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={8} md={6}>
+              <Form.Item
+                name="timeout"
+                label="超时时间(秒)"
+              >
+                <Input type="number" placeholder="请输入超时时间" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={8} md={6}>
+              <Form.Item
+                name="retry_times"
+                label="重试次数"
+              >
+                <Input type="number" placeholder="请输入重试次数" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={8} md={6}>
+              <Form.Item
+                name="retry_interval"
+                label="重试间隔(秒)"
+              >
+                <Input type="number" placeholder="请输入重试间隔" />
+              </Form.Item>
+            </Col>
+          </Row>
+        </div>
 
-          {/* 黄色区域 - 重试配置 */}
-          <Col xs={24} md={8}>
-            <div style={{ backgroundColor: '#fffbe6', border: '1px solid #ffe58f', borderRadius: '4px', padding: '16px', height: '100%' }}>
-              <h4 style={{ marginBottom: '12px', color: '#d48806' }}>重试配置</h4>
-              <Row gutter={[16, 16]}>
-                <Col xs={24} sm={8}>
-                  <Form.Item
-                    name="timeout"
-                    label="超时时间(秒)"
-                  >
-                    <Input type="number" placeholder="请输入超时时间" />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} sm={8}>
-                  <Form.Item
-                    name="retry_times"
-                    label="重试次数"
-                  >
-                    <Input type="number" placeholder="请输入重试次数" />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} sm={8}>
-                  <Form.Item
-                    name="retry_interval"
-                    label="重试间隔(秒)"
-                  >
-                    <Input type="number" placeholder="请输入重试间隔" />
-                  </Form.Item>
-                </Col>
-              </Row>
-            </div>
-          </Col>
-
-          {/* 蓝色区域 - 通知配置 */}
-          <Col xs={24} md={8}>
-            <div style={{ backgroundColor: '#f0f5ff', border: '1px solid #adc6ff', borderRadius: '4px', padding: '16px', height: '100%' }}>
-              <h4 style={{ marginBottom: '12px', color: '#1867c0' }}>通知配置</h4>
-              <Row gutter={[16, 16]}>
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    name="notify_status"
-                    label="通知状态"
-                  >
-                    <Select placeholder="请选择通知状态">
-                      <Select.Option value={1}>启用</Select.Option>
-                      <Select.Option value={0}>禁用</Select.Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    name="notify_type"
-                    label="通知类型"
-                  >
-                    <Select placeholder="请选择通知类型">
-                      <Select.Option value={0}>邮件</Select.Option>
-                      <Select.Option value={1}>短信</Select.Option>
-                      <Select.Option value={2}>Webhook</Select.Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    name="notify_receiver_id"
-                    label="通知接收者ID"
-                  >
-                    <Input placeholder="请输入通知接收者ID" />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    name="notify_keyword"
-                    label="通知关键字"
-                  >
-                    <Input placeholder="请输入通知关键字" />
-                  </Form.Item>
-                </Col>
-              </Row>
-            </div>
-          </Col>
-        </Row>
+        {/* 通知配置 */}
+        <div style={{ marginBottom: '24px' }}>
+          <h4 style={{ marginBottom: '16px', color: '#333', fontSize: '16px' }}>通知配置</h4>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={12} md={6}>
+              <Form.Item
+                name="notify_status"
+                label="通知状态"
+              >
+                <Select placeholder="请选择通知状态">
+                  <Select.Option value={1}>启用</Select.Option>
+                  <Select.Option value={0}>禁用</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Form.Item
+                name="notify_type"
+                label="通知类型"
+              >
+                <Select placeholder="请选择通知类型">
+                  <Select.Option value={0}>邮件</Select.Option>
+                  <Select.Option value={1}>短信</Select.Option>
+                  <Select.Option value={2}>Webhook</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Form.Item
+                name="notify_receiver_id"
+                label="通知接收者ID"
+              >
+                <Input placeholder="请输入通知接收者ID" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Form.Item
+                name="notify_keyword"
+                label="通知关键字"
+              >
+                <Input placeholder="请输入通知关键字" />
+              </Form.Item>
+            </Col>
+          </Row>
+        </div>
 
         <Form.Item>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>

@@ -153,15 +153,14 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
             onClick={handleMenuClick}
           />
         </Sider>
-        <Layout style={{ marginLeft: collapsed ? '80px' : '200px', minWidth: '100%' }}>
+        <Layout style={{ marginLeft: collapsed ? '80px' : '200px' }}>
           <Header style={{ 
             padding: '0 24px', 
             background: '#fff',
             borderBottom: '1px solid #f0f0f0',
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center',
-            minWidth: '100%'
+            alignItems: 'center'
           }}>
             <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
               定时任务管理系统
