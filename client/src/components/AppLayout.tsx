@@ -193,7 +193,8 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
           <Content style={{ 
             margin: '16px',
             padding: 0,
-            minHeight: 'calc(100vh - 96px)'
+            minHeight: 'calc(100vh - 96px)',
+            overflow: 'auto'
           }}>
             {children}
           </Content>
