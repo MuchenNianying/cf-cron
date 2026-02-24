@@ -139,7 +139,7 @@ export class Scheduler {
       const timeSincePrevRun = currentTime.getTime() - prevRun.getTime();
       const timeUntilNextRun = nextRun.getTime() - currentTime.getTime();
       
-      return timeSincePrevRun >= 0 && timeSincePrevRun <= 60 * 1000;
+      return timeSincePrevRun >= 0 && timeSincePrevRun <= 5 * 60 * 1000;
     } catch (error) {
       return false;
     }
