@@ -69,84 +69,91 @@ export class Scheduler {
 
   async run() {
     const now = new Date();
+    console.log(`[Scheduler] 开始执行调度器，当前时间: ${now.toISOString()}`);
     
-    // 获取所有启用的任务（优先使用缓存）
     try {
       let tasks = [];
       
-      // 检查缓存是否过期或为空
       const isCacheExpired = Date.now() - globalCache.timestamp > globalCache.expiry;
+      console.log(`[Scheduler] 缓存状态: 过期=${isCacheExpired}, 任务数=${globalCache.tasks.length}`);
+      
       if (isCacheExpired || globalCache.tasks.length === 0) {
-        // 从数据库获取任务列表
         const dbTasks = await this.db.prepare(
           'SELECT id, name, spec, protocol, command, http_method, timeout, retry_times, retry_interval, request_headers, request_body, status FROM tasks WHERE status = 1'
         ).all();
         tasks = dbTasks.results || [];
-        // 更新缓存
         globalCache.tasks = tasks;
         globalCache.timestamp = Date.now();
+        console.log(`[Scheduler] 从数据库获取任务，共 ${tasks.length} 个启用的任务`);
       } else {
-        // 使用缓存的任务列表
         tasks = globalCache.tasks;
+        console.log(`[Scheduler] 使用缓存的任务，共 ${tasks.length} 个任务`);
       }
       
       if (tasks.length === 0) {
+        console.log('[Scheduler] 没有启用的任务，跳过执行');
         return;
       }
       
-      // 并行执行所有任务
+      let executedCount = 0;
+      
       const executionPromises = tasks.map(async (task: any) => {
         try {
-          // 验证任务配置
           if (!task.spec) {
+            console.log(`[Scheduler] 任务 ${task.id} (${task.name}) 没有 cron 表达式，跳过`);
             return;
           }
           
-          // 检查是否需要执行任务
-          if (this.shouldExecuteTask(task.spec, now)) {
-            // 直接执行任务
+          const shouldExecute = this.shouldExecuteTask(task.spec, now);
+          console.log(`[Scheduler] 任务 ${task.id} (${task.name}) cron: ${task.spec}, 是否执行: ${shouldExecute}`);
+          
+          if (shouldExecute) {
+            console.log(`[Scheduler] 开始执行任务 ${task.id} (${task.name})`);
             await this.executeTask(task);
+            executedCount++;
           }
         } catch (error) {
-          // 静默处理错误
+          console.error(`[Scheduler] 任务 ${task.id} 执行出错:`, error);
         }
       });
       
-      // 等待所有任务执行完成
       await Promise.all(executionPromises);
+      console.log(`[Scheduler] 调度器执行完成，共执行 ${executedCount} 个任务`);
     } catch (error) {
+      console.error('[Scheduler] 调度器执行失败:', error);
     }
   }
 
   private shouldExecuteTask(cronExpression: string, currentTime: Date): boolean {
     try {
-      // 检查 cron 表达式格式，只支持 5 位格式：分 时 日 月 星期
       const cronParts = cronExpression.trim().split(/\s+/);
       
       if (cronParts.length !== 5) {
-        // 格式不正确，只支持 5 位格式
         return false;
       }
       
-      // 使用 cron-parser 解析 cron 表达式
       const interval = cronParser.parseExpression(cronExpression, { tz: 'Asia/Shanghai' });
       const prevRun = interval.prev().toDate();
+      const nextRun = interval.next().toDate();
       
-      // 检查当前时间是否接近上一个执行时间（5分钟内）
-      const timeDiff = Math.abs(currentTime.getTime() - prevRun.getTime());
-      return timeDiff <= 5 * 60 * 1000;
+      const timeSincePrevRun = currentTime.getTime() - prevRun.getTime();
+      const timeUntilNextRun = nextRun.getTime() - currentTime.getTime();
+      
+      return timeSincePrevRun >= 0 && timeSincePrevRun <= 60 * 1000;
     } catch (error) {
       return false;
     }
   }
 
   private async executeTask(task: Task) {
+    console.log(`[Scheduler] 开始执行任务 ${task.id} (${task.name}), 协议: ${task.protocol}, URL: ${task.command}`);
+    
     let logId: number;
     try {
-      // 创建任务日志
       logId = await this.createTaskLog(task);
+      console.log(`[Scheduler] 创建任务日志成功，日志ID: ${logId}`);
     } catch (error) {
-      // 即使日志创建失败，也要继续执行任务
+      console.error(`[Scheduler] 创建任务日志失败:`, error);
       return;
     }
     
@@ -154,30 +161,28 @@ export class Scheduler {
     let status = 2;
     
     try {
-      // 根据协议执行任务
       if (task.protocol === 1) {
-        // HTTP 任务
         result = await this.executeHTTPTask(task);
       } else if (task.protocol === 2) {
-        // SSH 任务
         result = await this.executeSSHTask(task);
       } else if (task.protocol === 3) {
-        // 本地任务
         result = await this.executeLocalTask(task);
       } else {
         result = '不支持的协议类型';
         status = 0;
       }
+      console.log(`[Scheduler] 任务 ${task.id} 执行结果: ${result}`);
     } catch (error: any) {
       result = `执行失败: ${error.message}`;
       status = 0;
+      console.error(`[Scheduler] 任务 ${task.id} 执行失败:`, error);
     }
     
     try {
-      // 更新任务日志
       await this.updateTaskLog(logId, status, result);
+      console.log(`[Scheduler] 更新任务日志成功`);
     } catch (error) {
-      // 静默处理错误
+      console.error(`[Scheduler] 更新任务日志失败:`, error);
     }
   }
 
