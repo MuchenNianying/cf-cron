@@ -23,7 +23,7 @@ interface Env {
 const globalCache = {
   tasks: [],
   timestamp: 0,
-  expiry: 24 * 60 * 60 * 1000 // 缓存过期时间：1天
+  expiry: 7 * 24 * 60 * 60 * 1000 // 缓存过期时间：7天
 };
 
 export class Scheduler {
