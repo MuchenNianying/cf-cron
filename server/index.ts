@@ -222,9 +222,13 @@ export default {
     try {
       console.log('开始执行定时任务调度器...');
       
-      // 检查必要的环境变量
       if (!env.DB) {
         console.error('数据库连接失败: env.DB 未定义');
+        return;
+      }
+      
+      if (!env.CACHE) {
+        console.error('KV缓存连接失败: env.CACHE 未定义');
         return;
       }
       
@@ -235,7 +239,6 @@ export default {
       
       console.log('环境变量检查通过');
       
-      // 使用 Scheduler 类执行调度逻辑
       const scheduler = new Scheduler(env);
       await scheduler.run();
       

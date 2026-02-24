@@ -384,16 +384,13 @@ app.post('/cache/refresh', async (c) => {
 app.get('/cache/query', async (c) => {
   try {
     const scheduler = new Scheduler(c.env);
-    // 获取缓存信息
-    const cacheInfo = scheduler.getCacheInfo();
+    const cacheInfo = await scheduler.getCacheInfo();
     
-    // 检查缓存是否过期，如果过期则更新
     if (cacheInfo.isExpired) {
       await scheduler.updateTaskCache();
     }
     
-    // 重新获取更新后的缓存信息
-    const updatedCacheInfo = scheduler.getCacheInfo();
+    const updatedCacheInfo = await scheduler.getCacheInfo();
     
     return c.json({ 
       message: '查询任务缓存成功',

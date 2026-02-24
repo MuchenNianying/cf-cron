@@ -17,54 +17,82 @@ interface Task {
 interface Env {
   DB: any;
   SECRET_KEY: string;
+  CACHE: KVNamespace;
 }
 
-// 全局缓存对象
-const globalCache = {
-  tasks: [],
-  timestamp: 0,
-  expiry: 7 * 24 * 60 * 60 * 1000 // 缓存过期时间：7天
-};
+const CACHE_KEY = 'tasks_cache';
+const CACHE_EXPIRY = 7 * 24 * 60 * 60; // 缓存过期时间：7天（秒）
 
 export class Scheduler {
   private db: any;
   private secretKey: string;
+  private cache: KVNamespace;
 
   constructor(env: Env) {
     this.db = env.DB;
     this.secretKey = env.SECRET_KEY || 'default_secret';
+    this.cache = env.CACHE;
   }
 
-  // 清空任务缓存
-  public clearTaskCache() {
-    globalCache.tasks = [];
-    globalCache.timestamp = 0;
+  public async clearTaskCache() {
+    try {
+      await this.cache.delete(CACHE_KEY);
+    } catch (error) {
+      console.error('[Scheduler] 清空缓存失败:', error);
+    }
   }
 
-  // 手动更新任务缓存
   public async updateTaskCache() {
     try {
-      // 只查询必要的字段，减少数据库传输和内存使用
       const tasks = await this.db.prepare(
         'SELECT id, name, spec, protocol, command, http_method, timeout, retry_times, retry_interval, request_headers, request_body, status FROM tasks WHERE status = 1'
       ).all();
       
-      globalCache.tasks = tasks.results || [];
-      globalCache.timestamp = Date.now();
+      const cacheData = {
+        tasks: tasks.results || [],
+        timestamp: Date.now()
+      };
+      
+      await this.cache.put(CACHE_KEY, JSON.stringify(cacheData), {
+        expirationTtl: CACHE_EXPIRY
+      });
+      
+      console.log(`[Scheduler] 更新KV缓存成功，共 ${cacheData.tasks.length} 个任务`);
     } catch (error) {
-      // 静默处理错误
-      globalCache.tasks = [];
+      console.error('[Scheduler] 更新缓存失败:', error);
     }
   }
 
-  // 获取任务缓存信息
-  public getCacheInfo() {
-    return {
-      tasks: globalCache.tasks,
-      taskCount: globalCache.tasks.length,
-      lastUpdated: globalCache.timestamp,
-      isExpired: Date.now() - globalCache.timestamp > globalCache.expiry
-    };
+  public async getCacheInfo() {
+    try {
+      const cacheStr = await this.cache.get(CACHE_KEY);
+      if (!cacheStr) {
+        return {
+          tasks: [],
+          taskCount: 0,
+          lastUpdated: 0,
+          isExpired: true
+        };
+      }
+      
+      const cacheData = JSON.parse(cacheStr);
+      const isExpired = Date.now() - cacheData.timestamp > CACHE_EXPIRY * 1000;
+      
+      return {
+        tasks: cacheData.tasks,
+        taskCount: cacheData.tasks.length,
+        lastUpdated: cacheData.timestamp,
+        isExpired
+      };
+    } catch (error) {
+      console.error('[Scheduler] 获取缓存失败:', error);
+      return {
+        tasks: [],
+        taskCount: 0,
+        lastUpdated: 0,
+        isExpired: true
+      };
+    }
   }
 
   async run() {
@@ -74,20 +102,26 @@ export class Scheduler {
     try {
       let tasks = [];
       
-      const isCacheExpired = Date.now() - globalCache.timestamp > globalCache.expiry;
-      console.log(`[Scheduler] 缓存状态: 过期=${isCacheExpired}, 任务数=${globalCache.tasks.length}`);
+      const cacheInfo = await this.getCacheInfo();
+      console.log(`[Scheduler] KV缓存状态: 过期=${cacheInfo.isExpired}, 任务数=${cacheInfo.taskCount}`);
       
-      if (isCacheExpired || globalCache.tasks.length === 0) {
+      if (cacheInfo.isExpired || cacheInfo.taskCount === 0) {
         const dbTasks = await this.db.prepare(
           'SELECT id, name, spec, protocol, command, http_method, timeout, retry_times, retry_interval, request_headers, request_body, status FROM tasks WHERE status = 1'
         ).all();
         tasks = dbTasks.results || [];
-        globalCache.tasks = tasks;
-        globalCache.timestamp = Date.now();
+        
+        await this.cache.put(CACHE_KEY, JSON.stringify({
+          tasks: tasks,
+          timestamp: Date.now()
+        }), {
+          expirationTtl: CACHE_EXPIRY
+        });
+        
         console.log(`[Scheduler] 从数据库获取任务，共 ${tasks.length} 个启用的任务`);
       } else {
-        tasks = globalCache.tasks;
-        console.log(`[Scheduler] 使用缓存的任务，共 ${tasks.length} 个任务`);
+        tasks = cacheInfo.tasks;
+        console.log(`[Scheduler] 使用KV缓存的任务，共 ${tasks.length} 个任务`);
       }
       
       if (tasks.length === 0) {
@@ -188,7 +222,6 @@ export class Scheduler {
 
   private async executeHTTPTask(task: Task): Promise<string> {
     try {
-      // 解析请求头
       let headers: any = {};
       if (task.request_headers) {
         try {
@@ -198,22 +231,17 @@ export class Scheduler {
         }
       }
       
-      // 检查并设置默认 Content-Type
       if (!headers['Content-Type'] && task.request_body) {
         headers['Content-Type'] = 'application/json';
       }
       
-      // 处理请求体
       let body: any = undefined;
       if (task.request_body) {
-        // 对于 POST 请求，直接使用原始字符串作为 body
         body = task.request_body;
       }
       
-      // 设置合理的超时时间
-      const timeout = task.timeout || 30; // 默认 30 秒
+      const timeout = task.timeout || 30;
       
-      // 发送 HTTP 请求
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout * 1000);
       
@@ -226,7 +254,6 @@ export class Scheduler {
       
       clearTimeout(timeoutId);
       
-      // 只检查响应状态，不读取响应内容，减少内存使用
       if (!response.ok) {
         throw new Error(`HTTP 错误: ${response.status} ${response.statusText}`);
       }
@@ -239,7 +266,6 @@ export class Scheduler {
 
   private async executeSSHTask(task: Task): Promise<string> {
     try {
-      // 这里需要实现 SSH 任务执行逻辑
       return 'SSH 执行成功';
     } catch (error: any) {
       return `SSH 执行失败: ${error.message}`;
@@ -248,7 +274,6 @@ export class Scheduler {
 
   private async executeLocalTask(task: Task): Promise<string> {
     try {
-      // 这里需要实现本地任务执行逻辑
       return '本地执行成功';
     } catch (error: any) {
       return `本地执行失败: ${error.message}`;
