@@ -94,37 +94,26 @@ export class Scheduler {
         return;
       }
       
-      // 限制并行执行的任务数量，避免内存使用过高
-      const maxConcurrentTasks = 5;
-      const taskBatches = [];
-      
-      // 将任务分成多个批次
-      for (let i = 0; i < tasks.length; i += maxConcurrentTasks) {
-        taskBatches.push(tasks.slice(i, i + maxConcurrentTasks));
-      }
-      
-      // 按批次执行任务
-      for (const batch of taskBatches) {
-        const executionPromises = batch.map(async (task: any) => {
-          try {
-            // 验证任务配置
-            if (!task.spec) {
-              return;
-            }
-            
-            // 检查是否需要执行任务
-            if (this.shouldExecuteTask(task.spec, now)) {
-              // 直接执行任务
-              await this.executeTask(task);
-            }
-          } catch (error) {
-            // 静默处理错误
+      // 并行执行所有任务
+      const executionPromises = tasks.map(async (task: any) => {
+        try {
+          // 验证任务配置
+          if (!task.spec) {
+            return;
           }
-        });
-        
-        // 等待当前批次的任务执行完成
-        await Promise.all(executionPromises);
-      }
+          
+          // 检查是否需要执行任务
+          if (this.shouldExecuteTask(task.spec, now)) {
+            // 直接执行任务
+            await this.executeTask(task);
+          }
+        } catch (error) {
+          // 静默处理错误
+        }
+      });
+      
+      // 等待所有任务执行完成
+      await Promise.all(executionPromises);
     } catch (error) {
     }
   }
