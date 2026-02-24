@@ -26,9 +26,6 @@ const globalCache = {
   expiry: 24 * 60 * 60 * 1000 // 缓存过期时间：1天
 };
 
-// Cron 表达式解析缓存
-const cronCache = new Map();
-
 export class Scheduler {
   private db: any;
   private secretKey: string;
@@ -142,15 +139,8 @@ export class Scheduler {
         return false;
       }
       
-      // 检查缓存中是否有解析结果
-      if (!cronCache.has(cronExpression)) {
-        // 统一使用 cron-parser 解析所有 cron 表达式
-        const interval = cronParser.parseExpression(cronExpression, { tz: 'Asia/Shanghai' });
-        cronCache.set(cronExpression, interval);
-      }
-      
-      // 使用缓存的解析结果
-      const interval = cronCache.get(cronExpression);
+      // 使用 cron-parser 解析 cron 表达式
+      const interval = cronParser.parseExpression(cronExpression, { tz: 'Asia/Shanghai' });
       const prevRun = interval.prev().toDate();
       
       // 检查当前时间是否接近上一个执行时间（5分钟内）
